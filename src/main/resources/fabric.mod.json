@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "stickynotes",
+  "version": "${version}",
+  "name": "StickyNotes",
+  "description": "",
+  "authors": [
+    "DimasKama"
+  ],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/stickynotes/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.dimaskama.stickynotes.client.StickyNotes"
+    ]
+  },
+  "mixins": [
+    "stickynotes.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "stickynotes": "StickyNotes",
+  "stickynotes.open_list": "Open Notes List",
+  "stickynotes.notes_list": "Notes",
+  "stickynotes.add_note": "Add Note",
+  "stickynotes.edit_note": "Edit Note",
+  "stickynotes.note_name": "Name:",
+  "stickynotes.note_desc": "Description:",
+  "stickynotes.note_pos": "Position:",
+  "stickynotes.note_icon": "Texture: %s",
+  "stickynotes.note_see_through": "See Through Terrain: %s"
+}
