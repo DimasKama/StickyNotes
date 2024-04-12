@@ -4,10 +4,8 @@ import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.NotesManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.SliderWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.gui.widget.*;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
@@ -16,19 +14,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.DoubleConsumer;
 
 public class NoteEditScreen extends Screen {
-    private static final int WIDTH = 240;
-    private static final int HEIGHT = 180;
+    private static final int WIDTH = 270;
 
     private final Screen parent;
     private final Note note;
-    private int x;
-    private int y;
     private TextFieldWidget nameWidget;
     private TextFieldWidget descWidget;
     private boolean nameDirty;
     private boolean descDirty;
     private boolean posDirty;
     private double noteX, noteY, noteZ;
+    private int hoveredIcon = -1;
 
     public NoteEditScreen(@Nullable Screen parent, Note note, boolean edit) {
         super(Text.translatable(edit ? "stickynotes.edit_note" : "stickynotes.add_note"));
@@ -41,66 +37,64 @@ public class NoteEditScreen extends Screen {
 
     @Override
     protected void init() {
-        x = (width - WIDTH) >> 1;
-        y = (height - HEIGHT) >> 1;
-        Text descText = Text.translatable("stickynotes.note_desc");
-        int w = textRenderer.getWidth(descText);
-        int bX = x + w;
-        addDrawableChild(new TextWidget(x + 6, y + 25, w, 9, Text.translatable("stickynotes.note_name"), textRenderer).alignRight());
+        int left = (width - WIDTH) >> 1;
+        int top = height >>> 2;
+
+        Text nameText = Text.translatable("stickynotes.note_name");
+        int nameWidth = textRenderer.getWidth(nameText);
+        addDrawableChild(new TextWidget(left, top + 5, nameWidth, 9, nameText, textRenderer));
         nameWidget = new TextFieldWidget(
                 textRenderer,
-                bX + 12,
-                y + 20,
-                100,
+                left + nameWidth + 4,
+                top,
+                WIDTH - (nameWidth + 4),
                 20,
                 ScreenTexts.EMPTY
         );
         nameWidget.setText(note.name.getString());
         nameWidget.setChangedListener(s -> nameDirty = true);
         addDrawableChild(nameWidget);
-        addDrawableChild(new TextWidget(x + 6, y + 50, w, 9, Text.translatable("stickynotes.note_desc"), textRenderer).alignRight());
+
+        Text descText = Text.translatable("stickynotes.note_desc");
+        int descWidth = textRenderer.getWidth(descText);
+        addDrawableChild(new TextWidget(left, top + 25 + 5, descWidth, 9, descText, textRenderer));
         descWidget = new TextFieldWidget(
                 textRenderer,
-                bX + 12,
-                y + 45,
-                100,
+                left + descWidth + 4,
+                top + 25,
+                WIDTH - (descWidth + 4),
                 20,
                 ScreenTexts.EMPTY
         );
         descWidget.setText(note.description.getString());
+        descWidget.setMaxLength(256);
         descWidget.setChangedListener(s -> descDirty = true);
         addDrawableChild(descWidget);
-        addDrawableChild(new SliderWidget(
-                x + 12, y + 70,
-                216, 20,
-                Text.translatable("stickynotes.note_icon", note.icon),
-                (double) note.icon / (Note.TEXTURES_COUNT - 1)
-        ) {
-            @Override
-            protected void updateMessage() {
-                setMessage(Text.translatable("stickynotes.note_icon", note.icon));
-            }
-            @Override
-            protected void applyValue() {
-                note.icon = (int) (value * (Note.TEXTURES_COUNT - 1));
-            }
-        });
-        addDrawableChild(new TextWidget(x + 6, y + 100, w, 9, Text.translatable("stickynotes.note_pos"), textRenderer).alignRight());
-        int ww = (100 + w) / 3;
-        addPosField(bX + 12, y + 95, ww, "X", noteX, d -> noteX = d);
-        addPosField(bX + 12 + ww, y + 95, ww, "Y", noteY, d -> noteY = d);
-        addPosField(bX + 12 + ww + ww, y + 95, ww, "Z", noteZ, d -> noteZ = d);
+
+        for (int i = 0; i < Note.TEXTURES_COUNT; i++) {
+            addDrawableChild(new IconButton(left + 10 * i, top + 50, 10, i));
+        }
+
+        Text posText = Text.translatable("stickynotes.note_pos");
+        int posWidth = textRenderer.getWidth(posText);
+        addDrawableChild(new TextWidget(left, top + 65 + 5, posWidth, 9, posText, textRenderer));
+        int ww = (WIDTH - posWidth - 4) / 3;
+        addPosField(left + posWidth + 4, top + 65, ww, "X", noteX, d -> noteX = d);
+        addPosField(left + posWidth + 4 + ww, top + 65, ww, "Y", noteY, d -> noteY = d);
+        addPosField(left + posWidth + 4 + ww + ww, top + 65, ww, "Z", noteZ, d -> noteZ = d);
+
         addDrawableChild(ButtonWidget.builder(
                 Text.translatable("stickynotes.note_see_through", boolText(note.seeThrough)),
                 button -> {
                     note.seeThrough = !note.seeThrough;
                     button.setMessage(Text.translatable("stickynotes.note_see_through", boolText(note.seeThrough)));
                 }
-        ).dimensions(x + 12, y + 120, 216, 20).build());
+        ).dimensions(left, top + 90, WIDTH, 20).build());
+
         addDrawableChild(ButtonWidget.builder(
                 ScreenTexts.DONE,
                 button -> close()
-        ).dimensions((width - 80) >>> 1, y + HEIGHT - 30, 80, 20).build());
+        ).dimensions((width - 80) >> 1, top + 125, 80, 20).build());
     }
 
     private Text boolText(boolean bool) {
@@ -145,24 +139,63 @@ public class NoteEditScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackground(context);
-        context.fill(x - 1, y - 1, x + WIDTH + 1, y + HEIGHT + 1, 0xFFFFFFFF);
-        context.fill(x, y, x + WIDTH, y + HEIGHT, 0xFF595959);
+        renderBackgroundTexture(context);
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, y + 6, 0xFFFFFFFF);
+        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, height / 20 - 5, 0xFFFFFFFF);
+        int icon = hoveredIcon != -1 ? hoveredIcon : note.icon;
+        int iconSize = height / 10;
         context.drawTexture(
                 NotesManager.ICONS_TEXTURE,
-                x + WIDTH - 40 - 12,
-                y + 12,
-                40, 40,
-                Note.getIconU(note.icon), Note.getIconV(note.icon),
+                (width - iconSize) >> 1,
+                iconSize,
+                iconSize, iconSize,
+                Note.getIconU(icon), Note.getIconV(icon),
                 Note.ICON_SIDE, Note.ICON_SIDE,
                 Note.TEXTURE_SIDE, Note.TEXTURE_SIDE
         );
+        hoveredIcon = -1;
     }
 
     @Override
     public void close() {
         client.setScreen(parent);
+    }
+
+    private class IconButton extends ClickableWidget {
+        public final int icon;
+
+        public IconButton(int x, int y, int sideSize, int icon) {
+            super(x, y, sideSize, sideSize, ScreenTexts.EMPTY);
+            this.icon = icon;
+        }
+
+        @Override
+        protected void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+            if (isHovered()) {
+                hoveredIcon = icon;
+            }
+            context.drawTexture(
+                    NotesManager.ICONS_TEXTURE,
+                    getX() + 1,
+                    getY() + 1,
+                    getWidth() - 2, getHeight() - 2,
+                    Note.getIconU(icon), Note.getIconV(icon),
+                    Note.ICON_SIDE, Note.ICON_SIDE,
+                    Note.TEXTURE_SIDE, Note.TEXTURE_SIDE
+            );
+            if (isHovered()) {
+                context.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0x40FFFFFF);
+            }
+        }
+
+        @Override
+        public void onClick(double mouseX, double mouseY) {
+            note.icon = icon;
+        }
+
+        @Override
+        protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+            appendDefaultNarrations(builder);
+        }
     }
 }

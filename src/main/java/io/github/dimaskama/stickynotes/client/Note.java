@@ -46,6 +46,10 @@ public class Note {
         v = getIconV(icon) / TEXTURE_SIDE;
     }
 
+    public Box getBox() {
+        return box;
+    }
+
     public float getU() {
         return u;
     }

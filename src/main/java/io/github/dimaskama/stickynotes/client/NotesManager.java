@@ -11,6 +11,7 @@ import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
@@ -33,17 +34,29 @@ public class NotesManager {
 
     public void tick(MinecraftClient client) {
         Entity camera = client.getCameraEntity();
+        HitResult hitResult = client.crosshairTarget;
         List<Note> notes = StickyNotes.CONFIG.getData().notes;
         Note targeted = null;
-        if (camera != null && !notes.isEmpty()) {
+        if (camera != null && !notes.isEmpty() && hitResult != null) {
             Vec3d pos = camera.getCameraPosVec(1.0F);
-            Vec3d raycastVec = camera.getRotationVector().multiply(CLAMP_DIST + 0.5).add(pos);
+            double hitLen = hitResult.getPos().subtract(pos).lengthSquared();
+            boolean raycastedHitFar = hitResult.getType() != HitResult.Type.MISS;
+            Vec3d raycastVec = camera.getRotationVector().multiply(50.0);
+            Vec3d raycastPos = raycastVec.add(pos);
             for (Note note : notes) {
-                Optional<Vec3d> optional = note.getClampedBox(pos).raycast(pos, raycastVec);
-                if (optional.isPresent()) {
-                    targeted = note;
-                    break;
+                Optional<Vec3d> optional = (note.seeThrough ? note.getClampedBox(pos) : note.getBox()).raycast(pos, raycastPos);
+                if (optional.isEmpty()) continue;
+                if (!note.seeThrough) {
+                    double len = optional.get().subtract(pos).lengthSquared();
+                    if (len > hitLen) {
+                        if (raycastedHitFar) continue;
+                        hitLen = Note.raycastPos(camera).subtract(pos).lengthSquared();
+                        raycastedHitFar = true;
+                        if (len > hitLen) continue;
+                    }
                 }
+                targeted = note;
+                break;
             }
         }
         noteTargetTime = targeted == targetedNote ? noteTargetTime + 1 : 0;
@@ -61,24 +74,27 @@ public class NotesManager {
         context.profiler().push(StickyNotes.MOD_ID);
         RenderSystem.setShaderTexture(0, ICONS_TEXTURE);
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-        drawNotes(notes, context.matrixStack(), context.camera(), false);
-        drawNotes(notes, context.matrixStack(), context.camera(), true);
+        float viewDistance = MathHelper.square(context.gameRenderer().getViewDistance() * 2.0F);
+        drawNotes(notes, context.matrixStack(), context.camera(), viewDistance, false);
+        drawNotes(notes, context.matrixStack(), context.camera(), viewDistance, true);
         context.profiler().pop();
     }
 
-    private static void drawNotes(List<Note> notes, MatrixStack matrices, Camera camera, boolean seeThrough) {
+    private static void drawNotes(List<Note> notes, MatrixStack matrices, Camera camera, float viewDistance, boolean seeThrough) {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         boolean present = false;
         for (Note note : notes) {
             if (note.seeThrough != seeThrough) continue;
+            if (!seeThrough && viewDistance < note.pos.subtract(camera.getPos()).lengthSquared()) continue;
             if (!present) {
                 present = true;
                 builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
             }
-            Vec3d relPos = note.getClampedRelativePos(camera.getPos());
+            Vec3d relPos = seeThrough ? note.getClampedRelativePos(camera.getPos()) : note.pos.subtract(camera.getPos());
             matrices.push();
             matrices.translate(relPos.x, relPos.y, relPos.z);
             matrices.multiply(RotationAxis.NEGATIVE_Y.rotationDegrees(camera.getYaw() - 180.0F));
+            matrices.multiply(RotationAxis.NEGATIVE_X.rotationDegrees(camera.getPitch() * 0.4F));
             matrices.translate(-relPos.x, -relPos.y, -relPos.z);
             Matrix4f matrix = matrices.peek().getPositionMatrix();
             float x1 = (float) relPos.x - HALF_SIZE_IN_WORLD;

@@ -7,6 +7,5 @@
   "stickynotes.note_name": "Name:",
   "stickynotes.note_desc": "Description:",
   "stickynotes.note_pos": "Position:",
-  "stickynotes.note_icon": "Texture: %s",
   "stickynotes.note_see_through": "See Through Terrain: %s"
 }

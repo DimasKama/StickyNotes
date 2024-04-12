@@ -1,0 +1,11 @@
+{
+  "stickynotes": "StickyNotes",
+  "stickynotes.open_list": "Открыть Заметки",
+  "stickynotes.notes_list": "Заметки",
+  "stickynotes.add_note": "Новая Заметка",
+  "stickynotes.edit_note": "Редактирование Заметки",
+  "stickynotes.note_name": "Название:",
+  "stickynotes.note_desc": "Описание:",
+  "stickynotes.note_pos": "Позиция:",
+  "stickynotes.note_see_through": "Видно Сквозь Ландшафт: %s"
+}
