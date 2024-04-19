@@ -1,7 +1,7 @@
 package io.github.dimaskama.stickynotes.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.dimaskama.stickynotes.client.screen.StickyNotesScreen;
+import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -35,9 +35,9 @@ public class NotesManager {
     public void tick(MinecraftClient client) {
         Entity camera = client.getCameraEntity();
         HitResult hitResult = client.crosshairTarget;
-        List<Note> notes = StickyNotes.CONFIG.getData().notes;
+        List<Note> notes = StickyNotes.getCurrentWorldNotes();
         Note targeted = null;
-        if (camera != null && !notes.isEmpty() && hitResult != null) {
+        if (camera != null && notes != null && !notes.isEmpty() && hitResult != null) {
             Vec3d pos = camera.getCameraPosVec(1.0F);
             double hitLen = hitResult.getPos().subtract(pos).lengthSquared();
             boolean raycastedHitFar = hitResult.getType() != HitResult.Type.MISS;
@@ -63,29 +63,35 @@ public class NotesManager {
         targetedNote = targeted;
 
         // handle input
-        if (StickyNotes.OPEN_NOTES_LIST_KEY.isPressed()) {
-            client.setScreen(new StickyNotesScreen(client.currentScreen));
+        if (StickyNotes.OPEN_NOTES_LIST_KEY.isPressed() && notes != null) {
+            client.setScreen(new NotesListScreen(client.currentScreen, notes, true));
         }
     }
 
-    public void renderWorld(WorldRenderContext context) {
-        List<Note> notes = StickyNotes.CONFIG.getData().notes;
-        if (notes.isEmpty()) return;
-        context.profiler().push(StickyNotes.MOD_ID);
-        RenderSystem.setShaderTexture(0, ICONS_TEXTURE);
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-        float viewDistance = MathHelper.square(context.gameRenderer().getViewDistance() * 2.0F);
-        drawNotes(notes, context.matrixStack(), context.camera(), viewDistance, false);
-        drawNotes(notes, context.matrixStack(), context.camera(), viewDistance, true);
-        context.profiler().pop();
+    public void renderBeforeTranslucent(WorldRenderContext context) {
+        renderNotes(context, StickyNotes.getCurrentWorldNotes(), false);
     }
 
-    private static void drawNotes(List<Note> notes, MatrixStack matrices, Camera camera, float viewDistance, boolean seeThrough) {
+    public void renderLast(WorldRenderContext context) {
+        renderNotes(context, StickyNotes.getCurrentWorldNotes(), true);
+    }
+
+    private static void renderNotes(WorldRenderContext context, List<Note> notes, boolean seeThrough) {
+        if (notes == null || notes.isEmpty()) return;
+
+        context.profiler().push(StickyNotes.MOD_ID);
+
+        RenderSystem.setShaderTexture(0, ICONS_TEXTURE);
+        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        MatrixStack matrices = context.matrixStack();
+        Camera camera = context.camera();
+        float viewDistanceSq = MathHelper.square(context.gameRenderer().getViewDistance() * 2.0F);
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         boolean present = false;
+
         for (Note note : notes) {
             if (note.seeThrough != seeThrough) continue;
-            if (!seeThrough && viewDistance < note.pos.subtract(camera.getPos()).lengthSquared()) continue;
+            if (!seeThrough && viewDistanceSq < note.pos.subtract(camera.getPos()).lengthSquared()) continue;
             if (!present) {
                 present = true;
                 builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
@@ -112,6 +118,7 @@ public class NotesManager {
             builder.vertex(matrix, x2, y1, z).texture(u2, v1).next();
             matrices.pop();
         }
+
         if (present) {
             if (seeThrough) {
                 RenderSystem.disableDepthTest();
@@ -120,6 +127,8 @@ public class NotesManager {
             }
             BufferRenderer.drawWithGlobalProgram(builder.end());
         }
+
+        context.profiler().pop();
     }
 
     public void renderHud(DrawContext context, float delta) {

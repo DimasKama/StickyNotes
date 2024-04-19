@@ -6,6 +6,7 @@
   "mixins": [
   ],
   "client": [
+    "ClickableWidgetInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

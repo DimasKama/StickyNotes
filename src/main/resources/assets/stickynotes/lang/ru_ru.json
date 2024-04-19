@@ -1,11 +1,21 @@
 {
   "stickynotes": "StickyNotes",
+  "modmenu.summaryTranslation.stickynotes": "StickyNotes",
+  "modmenu.descriptionTranslation.stickynotes": "Размещение заметок в мире",
   "stickynotes.open_list": "Открыть Заметки",
+  "stickynotes.world_notes_list": "Заметки Разных Миров",
+  "stickynotes.world_notes_list.copy": "Копировать",
+  "stickynotes.world_notes_list.copy.tooltip": "Копировать список заметок из выбранного мира в текущий",
+  "stickynotes.world_notes_list.edit": "Изменить",
+  "stickynotes.world_notes_list.delete": "Удалить",
   "stickynotes.notes_list": "Заметки",
   "stickynotes.add_note": "Новая Заметка",
+  "stickynotes.other_worlds_notes": "Заметки Других Миров",
   "stickynotes.edit_note": "Редактирование Заметки",
   "stickynotes.note_name": "Название:",
   "stickynotes.note_desc": "Описание:",
   "stickynotes.note_pos": "Позиция:",
-  "stickynotes.note_see_through": "Видно Сквозь Ландшафт: %s"
+  "stickynotes.move_to_player": "Переместить к игроку",
+  "stickynotes.move_to_look_pos": "Переместить на точку, в которую вы смотрите",
+  "stickynotes.note_see_through": "Видимость Сквозь Ландшафт: %s"
 }

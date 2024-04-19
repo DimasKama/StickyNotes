@@ -5,7 +5,10 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.util.dynamic.Codecs;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 public class Note {
@@ -85,7 +88,7 @@ public class Note {
 
     // In pixels
     public static float getIconV(int texture) {
-        return texture / ICONS_IN_ROW * ICON_SIDE;
+        return (float) (texture / ICONS_IN_ROW) * ICON_SIDE;
     }
 
     public static Box createBox(Vec3d pos) {
@@ -96,6 +99,14 @@ public class Note {
     }
 
     public static Vec3d raycastPos(Entity entity) {
-        return entity.raycast(50.0, 1.0F, false).getPos();
+        HitResult result = entity.raycast(50.0, 1.0F, false);
+        Vec3d pos = result.getPos();
+        if (!(result instanceof BlockHitResult blockHit)) return pos;
+        Direction side = blockHit.getSide();
+        return switch (side) {
+            case UP: yield pos;
+            case DOWN: yield pos.add(0.0, -0.5, 0.0);
+            default: yield pos.offset(side, 0.25);
+        };
     }
 }

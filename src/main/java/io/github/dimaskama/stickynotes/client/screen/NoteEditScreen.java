@@ -2,12 +2,16 @@ package io.github.dimaskama.stickynotes.client.screen;
 
 import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.NotesManager;
+import io.github.dimaskama.stickynotes.client.StickyNotes;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.*;
+import net.minecraft.entity.Entity;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,13 +34,14 @@ public class NoteEditScreen extends Screen {
         super(Text.translatable(edit ? "stickynotes.edit_note" : "stickynotes.add_note"));
         this.parent = parent;
         this.note = note;
-        noteX = note.pos.x;
-        noteY = note.pos.y;
-        noteZ = note.pos.z;
     }
 
     @Override
     protected void init() {
+        noteX = note.pos.x;
+        noteY = note.pos.y;
+        noteZ = note.pos.z;
+
         int left = (width - WIDTH) >> 1;
         int top = height >>> 2;
 
@@ -78,10 +83,32 @@ public class NoteEditScreen extends Screen {
         Text posText = Text.translatable("stickynotes.note_pos");
         int posWidth = textRenderer.getWidth(posText);
         addDrawableChild(new TextWidget(left, top + 65 + 5, posWidth, 9, posText, textRenderer));
-        int ww = (WIDTH - posWidth - 4) / 3;
+        int ww = (WIDTH - posWidth - 4 - 50) / 3;
         addPosField(left + posWidth + 4, top + 65, ww, "X", noteX, d -> noteX = d);
         addPosField(left + posWidth + 4 + ww, top + 65, ww, "Y", noteY, d -> noteY = d);
         addPosField(left + posWidth + 4 + ww + ww, top + 65, ww, "Z", noteZ, d -> noteZ = d);
+
+        boolean inWorld = client.cameraEntity != null;
+
+        SquareButton moveToPlayerButton = new SquareButton(left + WIDTH - 45, top + 65, 0, () -> {
+            Entity camera = client.cameraEntity;
+            if (camera == null) return;
+            note.pos = camera.getPos();
+            clearAndInit();
+        });
+        moveToPlayerButton.active = inWorld;
+        if (inWorld) moveToPlayerButton.setTooltip(Tooltip.of(Text.translatable("stickynotes.move_to_player")));
+        addDrawableChild(moveToPlayerButton);
+
+        SquareButton moveToLookPosButton = new SquareButton(left + WIDTH - 20, top + 65, 1, () -> {
+            Entity camera = client.cameraEntity;
+            if (camera == null) return;
+            note.pos = Note.raycastPos(camera);
+            clearAndInit();
+        });
+        moveToLookPosButton.active = inWorld;
+        if (inWorld) moveToLookPosButton.setTooltip(Tooltip.of(Text.translatable("stickynotes.move_to_look_pos")));
+        addDrawableChild(moveToLookPosButton);
 
         addDrawableChild(ButtonWidget.builder(
                 Text.translatable("stickynotes.note_see_through", boolText(note.seeThrough)),
@@ -108,7 +135,7 @@ public class NoteEditScreen extends Screen {
                 width, 20,
                 ScreenTexts.EMPTY
         );
-        field.setText(String.format("%.2f", value));
+        field.setText(String.format("%.2f", value).replace(',', '.'));
         field.setPlaceholder(Text.literal(title));
         field.setChangedListener(string -> {
             posDirty = true;
@@ -191,6 +218,44 @@ public class NoteEditScreen extends Screen {
         @Override
         public void onClick(double mouseX, double mouseY) {
             note.icon = icon;
+        }
+
+        @Override
+        protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+            appendDefaultNarrations(builder);
+        }
+    }
+
+    private static class SquareButton extends ClickableWidget {
+        private static final Identifier BUTTONS_TEXTURE = new Identifier(StickyNotes.MOD_ID, "textures/gui/buttons.png");
+        private final Runnable clickAction;
+        private final int u;
+
+        public SquareButton(int x, int y, int texture, Runnable clickAction) {
+            super(x, y, 20, 20, ScreenTexts.EMPTY);
+            this.clickAction = clickAction;
+            u = texture * 20;
+        }
+
+        @Override
+        protected void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+            context.drawTexture(
+                    BUTTONS_TEXTURE,
+                    getX(), getY(),
+                    u,
+                    active
+                            ? isHovered()
+                                    ? 20
+                                    : 0
+                            : 40,
+                    20, 20,
+                    64, 64
+            );
+        }
+
+        @Override
+        public void onClick(double mouseX, double mouseY) {
+            clickAction.run();
         }
 
         @Override

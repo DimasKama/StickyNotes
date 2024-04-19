@@ -1,11 +1,21 @@
 {
   "stickynotes": "StickyNotes",
+  "modmenu.summaryTranslation.stickynotes": "StickyNotes",
+  "modmenu.descriptionTranslation.stickynotes": "Place Notes in the world",
   "stickynotes.open_list": "Open Notes List",
+  "stickynotes.world_notes_list": "Worlds` Notes List",
+  "stickynotes.world_notes_list.copy": "Copy",
+  "stickynotes.world_notes_list.copy.tooltip": "Copy notes list from selected world to current",
+  "stickynotes.world_notes_list.edit": "Edit",
+  "stickynotes.world_notes_list.delete": "Delete",
   "stickynotes.notes_list": "Notes",
   "stickynotes.add_note": "Add Note",
+  "stickynotes.other_worlds_notes": "Other Worlds` Notes",
   "stickynotes.edit_note": "Edit Note",
   "stickynotes.note_name": "Name:",
   "stickynotes.note_desc": "Description:",
   "stickynotes.note_pos": "Position:",
+  "stickynotes.move_to_player": "Move to player",
+  "stickynotes.move_to_look_pos": "Move to the point, you are looking at",
   "stickynotes.note_see_through": "See Through Terrain: %s"
 }

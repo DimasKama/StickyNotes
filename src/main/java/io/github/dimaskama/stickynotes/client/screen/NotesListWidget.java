@@ -19,19 +19,17 @@ import java.util.List;
 
 public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
     private final Screen screen;
+    private final List<Note> notes;
 
-    public NotesListWidget(MinecraftClient client, int width, int height, int top, int bottom, Screen screen) {
+    public NotesListWidget(MinecraftClient client, int width, int height, int top, int bottom, Screen screen, List<Note> notes) {
         super(client, width, height, top, bottom, 24);
         this.screen = screen;
-    }
-
-    public void init() {
-
+        this.notes = notes;
     }
 
     public void tick() {
         int entryCount = getEntryCount();
-        int size = StickyNotes.CONFIG.getData().notes.size();
+        int size = notes.size();
         if (entryCount < size) {
             for (int i = entryCount; i < size; i++) {
                 addEntry(new Entry());
@@ -54,7 +52,7 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
         }).size(40, 16).build();
         private final ButtonWidget deleteButton = ButtonWidget.builder(Text.translatable("selectWorld.delete"), button -> {
             if (note != null) {
-                StickyNotes.CONFIG.getData().notes.remove(note);
+                notes.remove(note);
                 StickyNotes.CONFIG.markDirty();
             }
         }).size(40, 16).build();
@@ -77,7 +75,6 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
 
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
-            List<Note> notes = StickyNotes.CONFIG.getData().notes;
             if (index >= notes.size()) return;
             Note note = notes.get(index);
             this.note = note;

@@ -3,7 +3,7 @@
   "id": "stickynotes",
   "version": "${version}",
   "name": "StickyNotes",
-  "description": "",
+  "description": "Place Notes in the world",
   "authors": [
     "DimasKama"
   ],
@@ -14,6 +14,9 @@
   "entrypoints": {
     "client": [
       "io.github.dimaskama.stickynotes.client.StickyNotes"
+    ],
+    "modmenu": [
+      "io.github.dimaskama.stickynotes.integration.ModMenuIntegration"
     ]
   },
   "mixins": [
