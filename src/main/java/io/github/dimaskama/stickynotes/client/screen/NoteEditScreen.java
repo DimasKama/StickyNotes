@@ -80,11 +80,11 @@ public class NoteEditScreen extends Screen {
         addDrawableChild(descWidget);
 
         int iconsInRow = WIDTH / 10;
-        Iterator<Identifier> iconIterator = ((SpriteAtlasTextureAccessor) ((SpriteAtlasHolderAccessor) client.getMapDecorationsAtlasManager()).stickynotes_getAtlas()).stickynotes_getSprites().keySet().iterator();
-        for (int i = 0; i < (iconsInRow << 1) && iconIterator.hasNext(); i++) {
-            Identifier icon = iconIterator.next();
+        int i = 0;
+        for (Identifier icon : ((SpriteAtlasTextureAccessor) ((SpriteAtlasHolderAccessor) client.getMapDecorationsAtlasManager()).stickynotes_getAtlas()).stickynotes_getSprites().keySet()) {
             if (icon.equals(MissingSprite.getMissingSpriteId())) continue;
             addDrawableChild(new IconButton(left + (i % iconsInRow) * 10, top + 50 + (i / iconsInRow) * 10, 10, icon));
+            ++i;
         }
 
         Text posText = Text.translatable("stickynotes.note_pos");
