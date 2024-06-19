@@ -10,5 +10,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(ClickableWidget.class)
 public interface ClickableWidgetInvoker {
     @Invoker("drawScrollableText")
-    static void stickynotes_invokeDrawScrollableText(DrawContext context, TextRenderer textRenderer, Text text, int left, int top, int right, int bottom, int color) {}
+    static void stickynotes_drawScrollableText(DrawContext context, TextRenderer textRenderer, Text text, int left, int top, int right, int bottom, int color) {}
 }

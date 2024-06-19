@@ -2,15 +2,16 @@ package io.github.dimaskama.stickynotes.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
+import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
+import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
@@ -22,12 +23,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class NotesManager {
-    public static final Identifier ICONS_TEXTURE = new Identifier("textures/map/map_icons.png");
     public static final double CLAMP_DIST = 16.0;
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
-    private static final float ICON_SIDE = (float) Note.ICON_SIDE / Note.TEXTURE_SIDE;
     @Nullable
     private Note targetedNote;
     private int noteTargetTime;
@@ -68,7 +67,7 @@ public class NotesManager {
         }
     }
 
-    public void renderBeforeTranslucent(WorldRenderContext context) {
+    public void renderAfterEntities(WorldRenderContext context) {
         renderNotes(context, StickyNotes.getCurrentWorldNotes(), false);
     }
 
@@ -81,20 +80,19 @@ public class NotesManager {
 
         context.profiler().push(StickyNotes.MOD_ID);
 
-        RenderSystem.setShaderTexture(0, ICONS_TEXTURE);
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         MatrixStack matrices = context.matrixStack();
+        SpriteAtlasHolderAccessor atlas = (SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager();
+        RenderSystem.setShaderTexture(0, atlas.stickynotes_getAtlas().getId());
+        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         Camera camera = context.camera();
         float viewDistanceSq = MathHelper.square(context.gameRenderer().getViewDistance() * 2.0F);
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        boolean present = false;
+        BufferBuilder builder = null;
 
         for (Note note : notes) {
             if (note.seeThrough != seeThrough) continue;
             if (!seeThrough && viewDistanceSq < note.pos.subtract(camera.getPos()).lengthSquared()) continue;
-            if (!present) {
-                present = true;
-                builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+            if (builder == null) {
+                builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
             }
             Vec3d relPos = seeThrough ? note.getClampedRelativePos(camera.getPos()) : note.pos.subtract(camera.getPos());
             matrices.push();
@@ -108,18 +106,19 @@ public class NotesManager {
             float x2 = x1 + SIZE_IN_WORLD;
             float y2 = (float) relPos.y;
             float z = (float) relPos.z;
-            float u1 = note.getU();
-            float v1 = note.getV();
-            float u2 = u1 + ICON_SIDE;
-            float v2 = v1 + ICON_SIDE;
-            builder.vertex(matrix, x1, y1, z).texture(u1, v1).next();
-            builder.vertex(matrix, x1, y2, z).texture(u1, v2).next();
-            builder.vertex(matrix, x2, y2, z).texture(u2, v2).next();
-            builder.vertex(matrix, x2, y1, z).texture(u2, v1).next();
+            Sprite sprite = atlas.stickynotes_getSprite(note.icon);
+            float u1 = sprite.getMinU();
+            float v1 = sprite.getMinV();
+            float u2 = sprite.getMaxU();
+            float v2 = sprite.getMaxV();
+            builder.vertex(matrix, x1, y1, z).texture(u1, v1);
+            builder.vertex(matrix, x1, y2, z).texture(u1, v2);
+            builder.vertex(matrix, x2, y2, z).texture(u2, v2);
+            builder.vertex(matrix, x2, y1, z).texture(u2, v1);
             matrices.pop();
         }
 
-        if (present) {
+        if (builder != null) {
             if (seeThrough) {
                 RenderSystem.disableDepthTest();
             } else {
@@ -131,10 +130,11 @@ public class NotesManager {
         context.profiler().pop();
     }
 
-    public void renderHud(DrawContext context, float delta) {
+    public void renderHud(DrawContext context, RenderTickCounter tickCounter) {
         Note note = targetedNote;
         if (note == null || Screen.hasShiftDown()) return;
         int time = noteTargetTime;
+        float delta = tickCounter.getTickDelta(false);
         int nameAlphaMask = time < 10
                 ? (int) (MathHelper.clamp(((time - 6) + delta) / 4.0F, 0.0F, 1.0F) * 255.0F)
                 : 0xFF;

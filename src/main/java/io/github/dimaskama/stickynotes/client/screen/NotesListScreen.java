@@ -8,6 +8,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.entity.Entity;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ public class NotesListScreen extends Screen {
 
     @Override
     protected void init() {
-        notesListWidget = new NotesListWidget(client, width, height, 32, height - 64, this, notes);
+        notesListWidget = new NotesListWidget(client, width, height - 96, 32, this, notes);
         addDrawableChild(notesListWidget);
         int x = (width - 120 - 10 - 120) >> 1;
         int y = height - 54;
@@ -39,7 +40,7 @@ public class NotesListScreen extends Screen {
                     camera != null ? Note.raycastPos(camera) : Vec3d.ZERO,
                     Text.literal("Note " + (notes.size() + 1)),
                     Text.empty(),
-                    0,
+                    Identifier.of("player"),
                     false
             );
             notes.add(note);
@@ -65,9 +66,8 @@ public class NotesListScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackgroundTexture(context);
-        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, 12, 0xFFFFFFFF);
         super.render(context, mouseX, mouseY, delta);
+        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, 12, 0xFFFFFFFF);
     }
 
     @Override

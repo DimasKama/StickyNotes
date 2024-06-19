@@ -64,7 +64,7 @@ public abstract class JsonConfig<D> {
     }
 
     protected void deserialize(JsonElement element) {
-        D d = getCodec().decode(JsonOps.INSTANCE, element).getOrThrow(false, s -> {}).getFirst();
+        D d = getCodec().decode(JsonOps.INSTANCE, element).getOrThrow().getFirst();
         for (Field field : d.getClass().getDeclaredFields()) {
             try {
                 if (isAcceptedModifiers(field.getModifiers())) {
@@ -96,7 +96,7 @@ public abstract class JsonConfig<D> {
     protected JsonElement serialize() {
         return getCodec()
                 .encode(data, JsonOps.INSTANCE, JsonOps.INSTANCE.empty())
-                .getOrThrow(false, s -> {});
+                .getOrThrow();
     }
 
     public void reset() {

@@ -32,7 +32,7 @@ public class StickyNotes implements ClientModInitializer {
         CONFIG.loadOrCreate();
         ClientLifecycleEvents.CLIENT_STOPPING.register(CONFIG::onClientStopping);
         ClientTickEvents.END_CLIENT_TICK.register(NOTES_MANAGER::tick);
-        WorldRenderEvents.BEFORE_ENTITIES.register(NOTES_MANAGER::renderBeforeTranslucent);
+        WorldRenderEvents.AFTER_ENTITIES.register(NOTES_MANAGER::renderAfterEntities);
         WorldRenderEvents.LAST.register(NOTES_MANAGER::renderLast);
         HudRenderCallback.EVENT.register(NOTES_MANAGER::renderHud);
         KeyBindingHelper.registerKeyBinding(OPEN_NOTES_LIST_KEY);

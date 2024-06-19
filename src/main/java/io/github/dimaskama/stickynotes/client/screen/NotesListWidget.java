@@ -2,7 +2,6 @@ package io.github.dimaskama.stickynotes.client.screen;
 
 import com.google.common.collect.ImmutableList;
 import io.github.dimaskama.stickynotes.client.Note;
-import io.github.dimaskama.stickynotes.client.NotesManager;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -21,8 +20,8 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
     private final Screen screen;
     private final List<Note> notes;
 
-    public NotesListWidget(MinecraftClient client, int width, int height, int top, int bottom, Screen screen, List<Note> notes) {
-        super(client, width, height, top, bottom, 24);
+    public NotesListWidget(MinecraftClient client, int width, int height, int y, Screen screen, List<Note> notes) {
+        super(client, width, height, y, 24);
         this.screen = screen;
         this.notes = notes;
     }
@@ -80,15 +79,7 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
             this.note = note;
             context.fill(x, y, x + entryWidth, y + entryHeight, hovered ? 0x50FFFFFF : 0x20FFFFFF);
             int iconSide = entryHeight - 4;
-            context.drawTexture(
-                    NotesManager.ICONS_TEXTURE,
-                    x + 2,
-                    y + 2,
-                    iconSide, iconSide,
-                    Note.getIconU(note.icon), Note.getIconV(note.icon),
-                    Note.ICON_SIDE, Note.ICON_SIDE,
-                    Note.TEXTURE_SIDE, Note.TEXTURE_SIDE
-            );
+            Note.draw(context, x + 2, y + 2, iconSide, iconSide, note.icon);
             TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
             context.drawTextWithShadow(
                     textRenderer,

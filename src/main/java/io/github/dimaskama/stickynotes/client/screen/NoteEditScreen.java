@@ -1,13 +1,15 @@
 package io.github.dimaskama.stickynotes.client.screen;
 
 import io.github.dimaskama.stickynotes.client.Note;
-import io.github.dimaskama.stickynotes.client.NotesManager;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
+import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
+import io.github.dimaskama.stickynotes.mixin.SpriteAtlasTextureAccessor;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.*;
+import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.entity.Entity;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
@@ -15,6 +17,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.function.DoubleConsumer;
 
 public class NoteEditScreen extends Screen {
@@ -28,7 +31,7 @@ public class NoteEditScreen extends Screen {
     private boolean descDirty;
     private boolean posDirty;
     private double noteX, noteY, noteZ;
-    private int hoveredIcon = -1;
+    private Identifier hoveredIcon = null;
 
     public NoteEditScreen(@Nullable Screen parent, Note note, boolean edit) {
         super(Text.translatable(edit ? "stickynotes.edit_note" : "stickynotes.add_note"));
@@ -76,21 +79,25 @@ public class NoteEditScreen extends Screen {
         descWidget.setChangedListener(s -> descDirty = true);
         addDrawableChild(descWidget);
 
-        for (int i = 0; i < Note.TEXTURES_COUNT; i++) {
-            addDrawableChild(new IconButton(left + 10 * i, top + 50, 10, i));
+        int iconsInRow = WIDTH / 10;
+        Iterator<Identifier> iconIterator = ((SpriteAtlasTextureAccessor) ((SpriteAtlasHolderAccessor) client.getMapDecorationsAtlasManager()).stickynotes_getAtlas()).stickynotes_getSprites().keySet().iterator();
+        for (int i = 0; i < (iconsInRow << 1) && iconIterator.hasNext(); i++) {
+            Identifier icon = iconIterator.next();
+            if (icon.equals(MissingSprite.getMissingSpriteId())) continue;
+            addDrawableChild(new IconButton(left + (i % iconsInRow) * 10, top + 50 + (i / iconsInRow) * 10, 10, icon));
         }
 
         Text posText = Text.translatable("stickynotes.note_pos");
         int posWidth = textRenderer.getWidth(posText);
-        addDrawableChild(new TextWidget(left, top + 65 + 5, posWidth, 9, posText, textRenderer));
+        addDrawableChild(new TextWidget(left, top + 75 + 5, posWidth, 9, posText, textRenderer));
         int ww = (WIDTH - posWidth - 4 - 50) / 3;
-        addPosField(left + posWidth + 4, top + 65, ww, "X", noteX, d -> noteX = d);
-        addPosField(left + posWidth + 4 + ww, top + 65, ww, "Y", noteY, d -> noteY = d);
-        addPosField(left + posWidth + 4 + ww + ww, top + 65, ww, "Z", noteZ, d -> noteZ = d);
+        addPosField(left + posWidth + 4, top + 75, ww, "X", noteX, d -> noteX = d);
+        addPosField(left + posWidth + 4 + ww, top + 75, ww, "Y", noteY, d -> noteY = d);
+        addPosField(left + posWidth + 4 + ww + ww, top + 75, ww, "Z", noteZ, d -> noteZ = d);
 
         boolean inWorld = client.cameraEntity != null;
 
-        SquareButton moveToPlayerButton = new SquareButton(left + WIDTH - 45, top + 65, 0, () -> {
+        SquareButton moveToPlayerButton = new SquareButton(left + WIDTH - 45, top + 75, 0, () -> {
             Entity camera = client.cameraEntity;
             if (camera == null) return;
             note.pos = camera.getPos();
@@ -100,7 +107,7 @@ public class NoteEditScreen extends Screen {
         if (inWorld) moveToPlayerButton.setTooltip(Tooltip.of(Text.translatable("stickynotes.move_to_player")));
         addDrawableChild(moveToPlayerButton);
 
-        SquareButton moveToLookPosButton = new SquareButton(left + WIDTH - 20, top + 65, 1, () -> {
+        SquareButton moveToLookPosButton = new SquareButton(left + WIDTH - 20, top + 75, 1, () -> {
             Entity camera = client.cameraEntity;
             if (camera == null) return;
             note.pos = Note.raycastPos(camera);
@@ -116,12 +123,12 @@ public class NoteEditScreen extends Screen {
                     note.seeThrough = !note.seeThrough;
                     button.setMessage(Text.translatable("stickynotes.note_see_through", boolText(note.seeThrough)));
                 }
-        ).dimensions(left, top + 90, WIDTH, 20).build());
+        ).dimensions(left, top + 100, WIDTH, 20).build());
 
         addDrawableChild(ButtonWidget.builder(
                 ScreenTexts.DONE,
                 button -> close()
-        ).dimensions((width - 80) >> 1, top + 125, 80, 20).build());
+        ).dimensions((width - 80) >> 1, top + 135, 80, 20).build());
     }
 
     private Text boolText(boolean bool) {
@@ -166,21 +173,12 @@ public class NoteEditScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackgroundTexture(context);
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, height / 20 - 5, 0xFFFFFFFF);
-        int icon = hoveredIcon != -1 ? hoveredIcon : note.icon;
+        Identifier icon = hoveredIcon != null ? hoveredIcon : note.icon;
         int iconSize = height / 10;
-        context.drawTexture(
-                NotesManager.ICONS_TEXTURE,
-                (width - iconSize) >> 1,
-                iconSize,
-                iconSize, iconSize,
-                Note.getIconU(icon), Note.getIconV(icon),
-                Note.ICON_SIDE, Note.ICON_SIDE,
-                Note.TEXTURE_SIDE, Note.TEXTURE_SIDE
-        );
-        hoveredIcon = -1;
+        Note.draw(context, (width - iconSize) >> 1, iconSize, iconSize, iconSize, icon);
+        hoveredIcon = null;
     }
 
     @Override
@@ -189,27 +187,19 @@ public class NoteEditScreen extends Screen {
     }
 
     private class IconButton extends ClickableWidget {
-        public final int icon;
+        public final Identifier icon;
 
-        public IconButton(int x, int y, int sideSize, int icon) {
+        public IconButton(int x, int y, int sideSize, Identifier icon) {
             super(x, y, sideSize, sideSize, ScreenTexts.EMPTY);
             this.icon = icon;
         }
 
         @Override
-        protected void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+        protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
             if (isHovered()) {
                 hoveredIcon = icon;
             }
-            context.drawTexture(
-                    NotesManager.ICONS_TEXTURE,
-                    getX() + 1,
-                    getY() + 1,
-                    getWidth() - 2, getHeight() - 2,
-                    Note.getIconU(icon), Note.getIconV(icon),
-                    Note.ICON_SIDE, Note.ICON_SIDE,
-                    Note.TEXTURE_SIDE, Note.TEXTURE_SIDE
-            );
+            Note.draw(context, getX() + 1, getY() + 1, getWidth() - 2, getHeight() - 2, icon);
             if (isHovered()) {
                 context.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0x40FFFFFF);
             }
@@ -227,7 +217,7 @@ public class NoteEditScreen extends Screen {
     }
 
     private static class SquareButton extends ClickableWidget {
-        private static final Identifier BUTTONS_TEXTURE = new Identifier(StickyNotes.MOD_ID, "textures/gui/buttons.png");
+        private static final Identifier BUTTONS_TEXTURE = Identifier.of(StickyNotes.MOD_ID, "textures/gui/buttons.png");
         private final Runnable clickAction;
         private final int u;
 
@@ -238,7 +228,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        protected void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+        protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
             context.drawTexture(
                     BUTTONS_TEXTURE,
                     getX(), getY(),

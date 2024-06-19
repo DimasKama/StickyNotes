@@ -23,8 +23,8 @@ import java.util.function.Consumer;
 public class WorldsNotesList extends ElementListWidget<WorldsNotesList.Entry> {
     private final Screen screen;
 
-    public WorldsNotesList(MinecraftClient client, int width, int height, int top, int bottom, Screen screen) {
-        super(client, width, height, top, bottom, 32);
+    public WorldsNotesList(MinecraftClient client, int width, int height, int y, Screen screen) {
+        super(client, width, height, y, 32);
         this.screen = screen;
     }
 
@@ -113,7 +113,7 @@ public class WorldsNotesList extends ElementListWidget<WorldsNotesList.Entry> {
                         0xFFFFFFFF
                 );
             } else {
-                ClickableWidgetInvoker.stickynotes_invokeDrawScrollableText(
+                ClickableWidgetInvoker.stickynotes_drawScrollableText(
                         context,
                         textRenderer,
                         keyText,

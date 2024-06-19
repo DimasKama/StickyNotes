@@ -20,7 +20,7 @@ public class WorldsNotesScreen extends Screen {
 
     @Override
     protected void init() {
-        worldsNotesList = new WorldsNotesList(client, width, height, 32, height - 64, this);
+        worldsNotesList = new WorldsNotesList(client, width, height - 96, 32, this);
         worldsNotesList.init();
         addDrawableChild(worldsNotesList);
         addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> close())
@@ -29,10 +29,8 @@ public class WorldsNotesScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        renderBackgroundTexture(context);
-        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, 12, 0xFFFFFFFF);
         super.render(context, mouseX, mouseY, delta);
-
+        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, 12, 0xFFFFFFFF);
     }
 
     @Override
