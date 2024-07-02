@@ -17,7 +17,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
 import java.util.function.DoubleConsumer;
 
 public class NoteEditScreen extends Screen {
@@ -51,32 +50,36 @@ public class NoteEditScreen extends Screen {
         Text nameText = Text.translatable("stickynotes.note_name");
         int nameWidth = textRenderer.getWidth(nameText);
         addDrawableChild(new TextWidget(left, top + 5, nameWidth, 9, nameText, textRenderer));
-        nameWidget = new TextFieldWidget(
-                textRenderer,
-                left + nameWidth + 4,
-                top,
-                WIDTH - (nameWidth + 4),
-                20,
-                ScreenTexts.EMPTY
-        );
-        nameWidget.setText(note.name.getString());
-        nameWidget.setChangedListener(s -> nameDirty = true);
+        if (nameWidget == null) {
+            nameWidget = new TextFieldWidget(
+                    textRenderer,
+                    left + nameWidth + 4,
+                    top,
+                    WIDTH - (nameWidth + 4),
+                    20,
+                    ScreenTexts.EMPTY
+            );
+            nameWidget.setText(note.name.getString());
+            nameWidget.setChangedListener(s -> nameDirty = true);
+        }
         addDrawableChild(nameWidget);
 
         Text descText = Text.translatable("stickynotes.note_desc");
         int descWidth = textRenderer.getWidth(descText);
         addDrawableChild(new TextWidget(left, top + 25 + 5, descWidth, 9, descText, textRenderer));
-        descWidget = new TextFieldWidget(
-                textRenderer,
-                left + descWidth + 4,
-                top + 25,
-                WIDTH - (descWidth + 4),
-                20,
-                ScreenTexts.EMPTY
-        );
-        descWidget.setText(note.description.getString());
-        descWidget.setMaxLength(256);
-        descWidget.setChangedListener(s -> descDirty = true);
+        if (descWidget == null) {
+            descWidget = new TextFieldWidget(
+                    textRenderer,
+                    left + descWidth + 4,
+                    top + 25,
+                    WIDTH - (descWidth + 4),
+                    20,
+                    ScreenTexts.EMPTY
+            );
+            descWidget.setText(note.description.getString());
+            descWidget.setMaxLength(256);
+            descWidget.setChangedListener(s -> descDirty = true);
+        }
         addDrawableChild(descWidget);
 
         int iconsInRow = WIDTH / 10;

@@ -40,6 +40,11 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
         }
     }
 
+    @Override
+    public int getRowWidth() {
+        return Math.min(400, width);
+    }
+
     public class Entry extends ElementListWidget.Entry<Entry> {
         @Nullable
         private Note note;
@@ -49,17 +54,16 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
                 StickyNotes.CONFIG.markDirty();
             }
         }).size(40, 16).build();
-        private final ButtonWidget deleteButton = ButtonWidget.builder(Text.translatable("selectWorld.delete"), button -> {
+        private final ButtonWidget deleteButton = ButtonWidget.builder(Text.literal("X"), button -> {
             if (note != null) {
                 notes.remove(note);
                 StickyNotes.CONFIG.markDirty();
             }
-        }).size(40, 16).build();
+        }).size(16, 16).build();
         private final List<ButtonWidget> children = ImmutableList.of(editButton, deleteButton);
 
         public Entry() {
             editButton.setWidth(MinecraftClient.getInstance().textRenderer.getWidth(editButton.getMessage()) + 8);
-            deleteButton.setWidth(MinecraftClient.getInstance().textRenderer.getWidth(deleteButton.getMessage()) + 8);
         }
 
         @Override
@@ -101,6 +105,8 @@ public class NotesListWidget extends ElementListWidget<NotesListWidget.Entry> {
             ) {
                 context.drawTooltip(textRenderer, note.description, mouseX, mouseY);
             }
+            String posText = (int) note.pos.x + " " + (int) note.pos.y + " " + (int) note.pos.z;
+            context.drawText(textRenderer, posText, editButton.getX() - 2 - textRenderer.getWidth(posText), y + ((entryHeight - 9) >> 1), 0xFFBBBBBB, false);
         }
     }
 }
