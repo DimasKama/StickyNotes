@@ -150,12 +150,13 @@ public class NotesManager {
                 ? (int) (MathHelper.clamp(((time - 26) + delta) / 4.0F, 0.0F, 1.0F) * 255.0F)
                 : 0xFF;
         if (descAlphaMask < 4) return;
-        context.drawTextWrapped(
+        context.drawWrappedText(
                 textRenderer,
                 note.description,
                 x, y,
                 Math.max((int) ((context.getScaledWindowWidth() >>> 1) * 0.8F), 80),
-                (descAlphaMask << 24) | 0x00FFFFFF
+                (descAlphaMask << 24) | 0x00FFFFFF,
+                false
         );
     }
 }
