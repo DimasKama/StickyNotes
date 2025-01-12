@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.*;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.entity.Entity;
 import net.minecraft.screen.ScreenTexts;
@@ -233,6 +234,7 @@ public class NoteEditScreen extends Screen {
         @Override
         protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
             context.drawTexture(
+                    RenderLayer::getGuiTextured,
                     BUTTONS_TEXTURE,
                     getX(), getY(),
                     u,

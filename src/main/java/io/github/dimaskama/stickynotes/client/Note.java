@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
@@ -70,11 +71,11 @@ public class Note {
     }
 
     public static void draw(DrawContext context, int x, int y, int width, int height, Identifier icon) {
-        context.drawSprite(
+        context.drawSpriteStretched(
+                RenderLayer::getGuiTextured,
+                ((SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager()).stickynotes_getSprite(icon),
                 x, y,
-                0,
-                width, height,
-                ((SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager()).stickynotes_getSprite(icon)
+                width, height
         );
     }
 

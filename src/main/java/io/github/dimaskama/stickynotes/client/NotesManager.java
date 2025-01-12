@@ -6,6 +6,7 @@ import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
@@ -78,12 +79,10 @@ public class NotesManager {
     private static void renderNotes(WorldRenderContext context, List<Note> notes, boolean seeThrough) {
         if (notes == null || notes.isEmpty()) return;
 
-        context.profiler().push(StickyNotes.MOD_ID);
-
         MatrixStack matrices = context.matrixStack();
         SpriteAtlasHolderAccessor atlas = (SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager();
         RenderSystem.setShaderTexture(0, atlas.stickynotes_getAtlas().getId());
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX);
         Camera camera = context.camera();
         float viewDistanceSq = MathHelper.square(context.gameRenderer().getViewDistance() * 2.0F);
         BufferBuilder builder = null;
@@ -126,8 +125,6 @@ public class NotesManager {
             }
             BufferRenderer.drawWithGlobalProgram(builder.end());
         }
-
-        context.profiler().pop();
     }
 
     public void renderHud(DrawContext context, RenderTickCounter tickCounter) {
