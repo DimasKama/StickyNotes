@@ -1,6 +1,7 @@
 plugins {
     id 'fabric-loom' version '1.7-SNAPSHOT'
     id 'maven-publish'
+    id "com.modrinth.minotaur" version "2.+"
 }
 
 version = project.mod_version
@@ -82,5 +83,25 @@ publishing {
         // Notice: This block does NOT have the same function as the block in the top level.
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
+    }
+}
+
+// Defined in user gradle.properties
+String modrinthToken = property("modrinth_forminotaur_token")
+
+if (modrinthToken) {
+    modrinth {
+        token = modrinthToken
+        projectId = "stickynotes"
+        versionNumber = project.mod_version
+        versionType = "release" // This is the default -- can also be `beta` or `alpha`
+        uploadFile = remapJar
+        gameVersions = ["1.21.1"] // Must be an array, even with only one version
+        dependencies { // A special DSL for creating dependencies
+            // scope.type
+            // The scope can be `required`, `optional`, `incompatible`, or `embedded`
+            // The type can either be `project` or `version`
+            required.project "fabric-api"
+        }
     }
 }
