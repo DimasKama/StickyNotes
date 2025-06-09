@@ -1,18 +1,21 @@
 package io.github.dimaskama.stickynotes.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
 import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gl.ShaderProgramKeys;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.TriState;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
@@ -28,6 +31,27 @@ public class NotesManager {
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
+    private static final RenderLayer RENDER_LAYER = RenderLayer.of(
+            "stickynotes",
+            1536,
+            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
+                    .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
+                    .build(),
+            RenderLayer.MultiPhaseParameters.builder()
+                    .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), TriState.FALSE, false))
+                    .build(false)
+    );
+    private static final RenderLayer RENDER_LAYER_SEE_THROUGH = RenderLayer.of(
+            "stickynotes_see_through",
+            1536,
+            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
+                    .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes_see_through"))
+                    .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                    .build(),
+            RenderLayer.MultiPhaseParameters.builder()
+                    .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), TriState.FALSE, false))
+                    .build(false)
+    );
     @Nullable
     private Note targetedNote;
     private int noteTargetTime;
@@ -81,17 +105,15 @@ public class NotesManager {
 
         MatrixStack matrices = context.matrixStack();
         SpriteAtlasHolderAccessor atlas = (SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager();
-        RenderSystem.setShaderTexture(0, atlas.stickynotes_getAtlas().getId());
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX);
         Camera camera = context.camera();
-        float viewDistanceSq = MathHelper.square(context.gameRenderer().getViewDistance() * 2.0F);
-        BufferBuilder builder = null;
+        float viewDistanceSq = MathHelper.square(context.gameRenderer().getViewDistanceBlocks() * 2.0F);
+        VertexConsumer consumer = null;
 
         for (Note note : notes) {
             if (note.seeThrough != seeThrough) continue;
             if (!seeThrough && viewDistanceSq < note.pos.subtract(camera.getPos()).lengthSquared()) continue;
-            if (builder == null) {
-                builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+            if (consumer == null) {
+                consumer = context.consumers().getBuffer(seeThrough ? RENDER_LAYER_SEE_THROUGH : RENDER_LAYER);
             }
             Vec3d relPos = seeThrough ? note.getClampedRelativePos(camera.getPos()) : note.pos.subtract(camera.getPos());
             matrices.push();
@@ -110,20 +132,11 @@ public class NotesManager {
             float v1 = sprite.getMinV();
             float u2 = sprite.getMaxU();
             float v2 = sprite.getMaxV();
-            builder.vertex(matrix, x1, y1, z).texture(u1, v1);
-            builder.vertex(matrix, x1, y2, z).texture(u1, v2);
-            builder.vertex(matrix, x2, y2, z).texture(u2, v2);
-            builder.vertex(matrix, x2, y1, z).texture(u2, v1);
+            consumer.vertex(matrix, x1, y1, z).texture(u1, v1).color(-1);
+            consumer.vertex(matrix, x1, y2, z).texture(u1, v2).color(-1);
+            consumer.vertex(matrix, x2, y2, z).texture(u2, v2).color(-1);
+            consumer.vertex(matrix, x2, y1, z).texture(u2, v1).color(-1);
             matrices.pop();
-        }
-
-        if (builder != null) {
-            if (seeThrough) {
-                RenderSystem.disableDepthTest();
-            } else {
-                RenderSystem.enableDepthTest();
-            }
-            BufferRenderer.drawWithGlobalProgram(builder.end());
         }
     }
 
@@ -131,7 +144,7 @@ public class NotesManager {
         Note note = targetedNote;
         if (note == null || Screen.hasShiftDown()) return;
         int time = noteTargetTime;
-        float delta = tickCounter.getTickDelta(false);
+        float delta = tickCounter.getTickProgress(false);
         int nameAlphaMask = time < 10
                 ? (int) (MathHelper.clamp(((time - 6) + delta) / 4.0F, 0.0F, 1.0F) * 255.0F)
                 : 0xFF;
