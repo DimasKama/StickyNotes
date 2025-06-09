@@ -3,7 +3,7 @@
   "id": "stickynotes",
   "version": "${version}",
   "name": "StickyNotes",
-  "description": "Place Notes in the world",
+  "description": "Place simple waypoints in the world (aka Sticky Notes)",
   "authors": [
     "DimasKama"
   ],
@@ -24,7 +24,7 @@
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
-    "fabric": "*",
+    "fabric-api": "*",
     "minecraft": ">=${minecraft_version}"
   }
 }
