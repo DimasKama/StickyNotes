@@ -5,13 +5,14 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.server.integrated.IntegratedServer;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.Nullables;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +35,7 @@ public class StickyNotes implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(NOTES_MANAGER::tick);
         WorldRenderEvents.AFTER_ENTITIES.register(NOTES_MANAGER::renderAfterEntities);
         WorldRenderEvents.LAST.register(NOTES_MANAGER::renderLast);
-        HudRenderCallback.EVENT.register(NOTES_MANAGER::renderHud);
+        HudElementRegistry.addLast(Identifier.of(MOD_ID, "notes"), NOTES_MANAGER::renderHud);
         KeyBindingHelper.registerKeyBinding(OPEN_NOTES_LIST_KEY);
     }
 

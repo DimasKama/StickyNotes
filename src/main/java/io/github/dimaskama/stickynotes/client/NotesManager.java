@@ -15,7 +15,6 @@ import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.TriState;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
@@ -38,7 +37,7 @@ public class NotesManager {
                     .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
                     .build(),
             RenderLayer.MultiPhaseParameters.builder()
-                    .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), TriState.FALSE, false))
+                    .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
                     .build(false)
     );
     private static final RenderLayer RENDER_LAYER_SEE_THROUGH = RenderLayer.of(
@@ -49,7 +48,7 @@ public class NotesManager {
                     .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
                     .build(),
             RenderLayer.MultiPhaseParameters.builder()
-                    .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), TriState.FALSE, false))
+                    .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
                     .build(false)
     );
     @Nullable
