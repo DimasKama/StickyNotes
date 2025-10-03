@@ -2,9 +2,9 @@ package io.github.dimaskama.stickynotes.client.screen;
 
 import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
-import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import io.github.dimaskama.stickynotes.mixin.SpriteAtlasTextureAccessor;
 import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
@@ -14,6 +14,7 @@ import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.entity.Entity;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
+import net.minecraft.util.Atlases;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
@@ -85,7 +86,7 @@ public class NoteEditScreen extends Screen {
 
         int iconsInRow = WIDTH / 10;
         int i = 0;
-        for (Identifier icon : ((SpriteAtlasTextureAccessor) ((SpriteAtlasHolderAccessor) client.getMapDecorationsAtlasManager()).stickynotes_getAtlas()).stickynotes_getSprites().keySet()) {
+        for (Identifier icon : ((SpriteAtlasTextureAccessor) (client.getAtlasManager().getAtlasTexture(Atlases.MAP_DECORATIONS))).stickynotes_getSprites().keySet()) {
             if (icon.equals(MissingSprite.getMissingSpriteId())) continue;
             addDrawableChild(new IconButton(left + (i % iconsInRow) * 10, top + 50 + (i / iconsInRow) * 10, 10, icon));
             ++i;
@@ -99,12 +100,12 @@ public class NoteEditScreen extends Screen {
         addPosField(left + posWidth + 4 + ww, top + 75, ww, "Y", noteY, d -> noteY = d);
         addPosField(left + posWidth + 4 + ww + ww, top + 75, ww, "Z", noteZ, d -> noteZ = d);
 
-        boolean inWorld = client.cameraEntity != null;
+        boolean inWorld = client.getCameraEntity() != null;
 
         SquareButton moveToPlayerButton = new SquareButton(left + WIDTH - 45, top + 75, 0, () -> {
-            Entity camera = client.cameraEntity;
+            Entity camera = client.getCameraEntity();
             if (camera == null) return;
-            note.pos = camera.getPos();
+            note.pos = camera.getEntityPos();
             clearAndInit();
         });
         moveToPlayerButton.active = inWorld;
@@ -112,7 +113,7 @@ public class NoteEditScreen extends Screen {
         addDrawableChild(moveToPlayerButton);
 
         SquareButton moveToLookPosButton = new SquareButton(left + WIDTH - 20, top + 75, 1, () -> {
-            Entity camera = client.cameraEntity;
+            Entity camera = client.getCameraEntity();
             if (camera == null) return;
             note.pos = Note.raycastPos(camera);
             clearAndInit();
@@ -210,7 +211,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        public void onClick(double mouseX, double mouseY) {
+        public void onClick(Click click, boolean doubled) {
             note.icon = icon;
         }
 
@@ -249,7 +250,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        public void onClick(double mouseX, double mouseY) {
+        public void onClick(Click click, boolean doubled) {
             clickAction.run();
         }
 

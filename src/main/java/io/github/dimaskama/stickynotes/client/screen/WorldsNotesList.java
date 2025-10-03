@@ -99,7 +99,11 @@ public class WorldsNotesList extends ElementListWidget<WorldsNotesList.Entry> {
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float delta) {
+            int x = getContentX();
+            int y = getContentY();
+            int entryWidth = getContentWidth();
+            int entryHeight = getContentHeight();
             context.fill(x, y, x + entryWidth, y + entryHeight, hovered ? 0x50FFFFFF : 0x20FFFFFF);
             TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
             int textX = x + 8;

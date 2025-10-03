@@ -35,7 +35,7 @@ public class NotesListScreen extends Screen {
         int x = (width - 120 - 10 - 120) >> 1;
         int y = height - 54;
         addDrawableChild(ButtonWidget.builder(Text.translatable("stickynotes.add_note"), button -> {
-            Entity camera = client.cameraEntity;
+            Entity camera = client.getCameraEntity();
             Note note = new Note(
                     camera != null ? Note.raycastPos(camera) : Vec3d.ZERO,
                     Text.literal("Note " + (notes.size() + 1)),

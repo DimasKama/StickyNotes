@@ -2,13 +2,13 @@ package io.github.dimaskama.stickynotes.client;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
+import net.minecraft.util.Atlases;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -73,7 +73,7 @@ public class Note {
     public static void draw(DrawContext context, int x, int y, int width, int height, Identifier icon) {
         context.drawSpriteStretched(
                 RenderPipelines.GUI_TEXTURED,
-                ((SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager()).stickynotes_getSprite(icon),
+                MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.MAP_DECORATIONS).getSprite(icon),
                 x, y,
                 width, height
         );

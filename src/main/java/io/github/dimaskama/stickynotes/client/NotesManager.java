@@ -3,29 +3,30 @@ package io.github.dimaskama.stickynotes.client;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
-import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
+import net.minecraft.client.render.command.OrderedRenderCommandQueue;
+import net.minecraft.client.render.state.CameraRenderState;
 import net.minecraft.client.texture.Sprite;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.Atlases;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 
 import java.util.List;
 import java.util.Optional;
 
 public class NotesManager {
+
     public static final double CLAMP_DIST = 16.0;
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
@@ -35,6 +36,7 @@ public class NotesManager {
             1536,
             RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
                     .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
+                    .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
                     .build(),
             RenderLayer.MultiPhaseParameters.builder()
                     .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
@@ -91,57 +93,61 @@ public class NotesManager {
         }
     }
 
-    public void renderAfterEntities(WorldRenderContext context) {
-        renderNotes(context, StickyNotes.getCurrentWorldNotes(), false);
+    public void renderAfterEntities(CameraRenderState camera, OrderedRenderCommandQueue queue) {
+        renderNotes(camera, queue, StickyNotes.getCurrentWorldNotes(), false);
     }
 
-    public void renderLast(WorldRenderContext context) {
-        renderNotes(context, StickyNotes.getCurrentWorldNotes(), true);
+    public void renderLast(CameraRenderState camera, OrderedRenderCommandQueue queue) {
+        renderNotes(camera, queue, StickyNotes.getCurrentWorldNotes(), true);
     }
 
-    private static void renderNotes(WorldRenderContext context, List<Note> notes, boolean seeThrough) {
+    private static void renderNotes(CameraRenderState camera, OrderedRenderCommandQueue queue, List<Note> notes, boolean seeThrough) {
         if (notes == null || notes.isEmpty()) return;
 
-        MatrixStack matrices = context.matrixStack();
-        SpriteAtlasHolderAccessor atlas = (SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager();
-        Camera camera = context.camera();
-        float viewDistanceSq = MathHelper.square(context.gameRenderer().getViewDistanceBlocks() * 2.0F);
-        VertexConsumer consumer = null;
+        RenderLayer renderLayer = seeThrough ? RENDER_LAYER_SEE_THROUGH : RENDER_LAYER;
+
+        MatrixStack matrices = new MatrixStack();
+        SpriteAtlasTexture atlas = MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.MAP_DECORATIONS);
+        float viewDistanceSq = MathHelper.square(MinecraftClient.getInstance().gameRenderer.getViewDistanceBlocks() * 2.0F);
+
+        Camera cameraObj = MinecraftClient.getInstance().gameRenderer.getCamera();
+        Quaternionf rotation = new Quaternionf().rotationYXZ(
+                MathHelper.RADIANS_PER_DEGREE * (180.0F - cameraObj.getYaw()),
+                MathHelper.RADIANS_PER_DEGREE * (-cameraObj.getPitch() * 0.4F),
+                0.0F
+        );
 
         for (Note note : notes) {
             if (note.seeThrough != seeThrough) continue;
-            if (!seeThrough && viewDistanceSq < note.pos.subtract(camera.getPos()).lengthSquared()) continue;
-            if (consumer == null) {
-                consumer = context.consumers().getBuffer(seeThrough ? RENDER_LAYER_SEE_THROUGH : RENDER_LAYER);
-            }
-            Vec3d relPos = seeThrough ? note.getClampedRelativePos(camera.getPos()) : note.pos.subtract(camera.getPos());
+            if (!seeThrough && viewDistanceSq < note.pos.subtract(camera.pos).lengthSquared()) continue;
+            Vec3d relPos = seeThrough ? note.getClampedRelativePos(camera.pos) : note.pos.subtract(camera.pos);
             matrices.push();
             matrices.translate(relPos.x, relPos.y, relPos.z);
-            matrices.multiply(RotationAxis.NEGATIVE_Y.rotationDegrees(camera.getYaw() - 180.0F));
-            matrices.multiply(RotationAxis.NEGATIVE_X.rotationDegrees(camera.getPitch() * 0.4F));
+            matrices.multiply(rotation);
             matrices.translate(-relPos.x, -relPos.y, -relPos.z);
-            Matrix4f matrix = matrices.peek().getPositionMatrix();
             float x1 = (float) relPos.x - HALF_SIZE_IN_WORLD;
             float y1 = (float) relPos.y + SIZE_IN_WORLD;
             float x2 = x1 + SIZE_IN_WORLD;
             float y2 = (float) relPos.y;
             float z = (float) relPos.z;
-            Sprite sprite = atlas.stickynotes_getSprite(note.icon);
+            Sprite sprite = atlas.getSprite(note.icon);
             float u1 = sprite.getMinU();
             float v1 = sprite.getMinV();
             float u2 = sprite.getMaxU();
             float v2 = sprite.getMaxV();
-            consumer.vertex(matrix, x1, y1, z).texture(u1, v1).color(-1);
-            consumer.vertex(matrix, x1, y2, z).texture(u1, v2).color(-1);
-            consumer.vertex(matrix, x2, y2, z).texture(u2, v2).color(-1);
-            consumer.vertex(matrix, x2, y1, z).texture(u2, v1).color(-1);
+            queue.submitCustom(matrices, renderLayer, (matrix, consumer) -> {
+                consumer.vertex(matrix, x1, y1, z).texture(u1, v1).color(-1);
+                consumer.vertex(matrix, x1, y2, z).texture(u1, v2).color(-1);
+                consumer.vertex(matrix, x2, y2, z).texture(u2, v2).color(-1);
+                consumer.vertex(matrix, x2, y1, z).texture(u2, v1).color(-1);
+            });
             matrices.pop();
         }
     }
 
     public void renderHud(DrawContext context, RenderTickCounter tickCounter) {
         Note note = targetedNote;
-        if (note == null || Screen.hasShiftDown()) return;
+        if (note == null || MinecraftClient.getInstance().isShiftPressed()) return;
         int time = noteTargetTime;
         float delta = tickCounter.getTickProgress(false);
         int nameAlphaMask = time < 10
@@ -171,4 +177,5 @@ public class NotesManager {
                 false
         );
     }
+
 }
