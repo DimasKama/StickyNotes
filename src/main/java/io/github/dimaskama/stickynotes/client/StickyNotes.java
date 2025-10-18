@@ -1,6 +1,7 @@
 package io.github.dimaskama.stickynotes.client;
 
 import io.github.dimaskama.stickynotes.config.NotesConfig;
+import io.github.dimaskama.stickynotes.integration.IrisIntegration;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -35,6 +36,7 @@ public class StickyNotes implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(NOTES_MANAGER::tick);
         HudElementRegistry.addLast(Identifier.of(MOD_ID, "notes"), NOTES_MANAGER::renderHud);
         KeyBindingHelper.registerKeyBinding(OPEN_NOTES_LIST_KEY);
+        IrisIntegration.init();
     }
 
     @Nullable

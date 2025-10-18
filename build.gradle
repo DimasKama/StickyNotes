@@ -15,6 +15,16 @@ repositories {
     maven {
         url "https://maven.terraformersmc.com/releases/"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
 }
 
 dependencies {
@@ -25,6 +35,7 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modCompileOnly "maven.modrinth:iris:${project.iris_version}"
 }
 
 processResources {
@@ -94,7 +105,7 @@ if (modrinthToken) {
         versionNumber = project.mod_version
         versionType = "release" // This is the default -- can also be `beta` or `alpha`
         uploadFile = remapJar
-        gameVersions = ["1.21.9"] // Must be an array, even with only one version
+        gameVersions = ["1.21.9", "1.21.10"] // Must be an array, even with only one version
         dependencies { // A special DSL for creating dependencies
             // scope.type
             // The scope can be `required`, `optional`, `incompatible`, or `embedded`

@@ -31,24 +31,26 @@ public class NotesManager {
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
+    public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
+            .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
+            .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+            .build();
     private static final RenderLayer RENDER_LAYER = RenderLayer.of(
             "stickynotes",
             1536,
-            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
-                    .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
-                    .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-                    .build(),
+            RENDER_PIPELINE,
             RenderLayer.MultiPhaseParameters.builder()
                     .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
                     .build(false)
     );
+    public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
+            .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes_see_through"))
+            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+            .build();
     private static final RenderLayer RENDER_LAYER_SEE_THROUGH = RenderLayer.of(
             "stickynotes_see_through",
             1536,
-            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
-                    .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes_see_through"))
-                    .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-                    .build(),
+            RENDER_PIPELINE_SEE_THROUGH,
             RenderLayer.MultiPhaseParameters.builder()
                     .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
                     .build(false)
@@ -124,22 +126,16 @@ public class NotesManager {
             matrices.push();
             matrices.translate(relPos.x, relPos.y, relPos.z);
             matrices.multiply(rotation);
-            matrices.translate(-relPos.x, -relPos.y, -relPos.z);
-            float x1 = (float) relPos.x - HALF_SIZE_IN_WORLD;
-            float y1 = (float) relPos.y + SIZE_IN_WORLD;
-            float x2 = x1 + SIZE_IN_WORLD;
-            float y2 = (float) relPos.y;
-            float z = (float) relPos.z;
             Sprite sprite = atlas.getSprite(note.icon);
             float u1 = sprite.getMinU();
             float v1 = sprite.getMinV();
             float u2 = sprite.getMaxU();
             float v2 = sprite.getMaxV();
             queue.submitCustom(matrices, renderLayer, (matrix, consumer) -> {
-                consumer.vertex(matrix, x1, y1, z).texture(u1, v1).color(-1);
-                consumer.vertex(matrix, x1, y2, z).texture(u1, v2).color(-1);
-                consumer.vertex(matrix, x2, y2, z).texture(u2, v2).color(-1);
-                consumer.vertex(matrix, x2, y1, z).texture(u2, v1).color(-1);
+                consumer.vertex(matrix, -HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).texture(u1, v1).color(-1);
+                consumer.vertex(matrix, -HALF_SIZE_IN_WORLD, 0, 0).texture(u1, v2).color(-1);
+                consumer.vertex(matrix, HALF_SIZE_IN_WORLD, 0, 0).texture(u2, v2).color(-1);
+                consumer.vertex(matrix, HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).texture(u2, v1).color(-1);
             });
             matrices.pop();
         }
