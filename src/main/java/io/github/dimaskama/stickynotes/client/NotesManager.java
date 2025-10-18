@@ -30,23 +30,25 @@ public class NotesManager {
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
+    public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
+            .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
+            .build();
     private static final RenderLayer RENDER_LAYER = RenderLayer.of(
             "stickynotes",
             1536,
-            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
-                    .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes"))
-                    .build(),
+            RENDER_PIPELINE,
             RenderLayer.MultiPhaseParameters.builder()
                     .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
                     .build(false)
     );
+    public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
+            .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes_see_through"))
+            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+            .build();
     private static final RenderLayer RENDER_LAYER_SEE_THROUGH = RenderLayer.of(
             "stickynotes_see_through",
             1536,
-            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
-                    .withLocation(Identifier.of(StickyNotes.MOD_ID, "stickynotes_see_through"))
-                    .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-                    .build(),
+            RENDER_PIPELINE_SEE_THROUGH,
             RenderLayer.MultiPhaseParameters.builder()
                     .texture(new RenderPhase.Texture(Identifier.ofVanilla("textures/atlas/map_decorations.png"), false))
                     .build(false)
