@@ -3,37 +3,37 @@ package io.github.dimaskama.stickynotes.client;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.entity.Entity;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextCodecs;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class Note {
     public static final Codec<Note> CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
-                    Vec3d.CODEC.fieldOf("pos").forGetter(n -> n.pos),
-                    TextCodecs.CODEC.fieldOf("name").forGetter(n -> n.name),
-                    TextCodecs.CODEC.fieldOf("description").forGetter(n -> n.description),
-                    Identifier.CODEC.fieldOf("icon").forGetter(n -> n.icon),
+                    Vec3.CODEC.fieldOf("pos").forGetter(n -> n.pos),
+                    ComponentSerialization.CODEC.fieldOf("name").forGetter(n -> n.name),
+                    ComponentSerialization.CODEC.fieldOf("description").forGetter(n -> n.description),
+                    ResourceLocation.CODEC.fieldOf("icon").forGetter(n -> n.icon),
                     Codec.BOOL.fieldOf("see_through").forGetter(n -> n.seeThrough)
             ).apply(instance, Note::new)
     );
-    public Vec3d pos;
-    public Text name;
-    public Text description;
-    public Identifier icon;
+    public Vec3 pos;
+    public Component name;
+    public Component description;
+    public ResourceLocation icon;
     public boolean seeThrough;
-    private Box box;
+    private AABB box;
 
-    public Note(Vec3d pos, Text name, Text description, Identifier icon, boolean seeThrough) {
+    public Note(Vec3 pos, Component name, Component description, ResourceLocation icon, boolean seeThrough) {
         this.pos = pos;
         this.name = name;
         this.description = description;
@@ -46,55 +46,55 @@ public class Note {
         box = createBox(pos);
     }
 
-    public Box getBox() {
+    public AABB getBox() {
         return box;
     }
 
-    public Box getClampedBox(Vec3d cameraPos) {
-        Vec3d relPos = pos.subtract(cameraPos);
-        if (relPos.lengthSquared() > NotesManager.CLAMP_SQUARED_DIST) {
+    public AABB getClampedBox(Vec3 cameraPos) {
+        Vec3 relPos = pos.subtract(cameraPos);
+        if (relPos.lengthSqr() > NotesManager.CLAMP_SQUARED_DIST) {
             return createBox(cameraPos.add(clampRelativePos(relPos)));
         }
         return box;
     }
 
-    public Vec3d getClampedRelativePos(Vec3d cameraPos) {
-        Vec3d relPos = pos.subtract(cameraPos);
-        if (relPos.lengthSquared() > NotesManager.CLAMP_SQUARED_DIST) {
+    public Vec3 getClampedRelativePos(Vec3 cameraPos) {
+        Vec3 relPos = pos.subtract(cameraPos);
+        if (relPos.lengthSqr() > NotesManager.CLAMP_SQUARED_DIST) {
             return clampRelativePos(relPos);
         }
         return relPos;
     }
 
-    private Vec3d clampRelativePos(Vec3d relPos) {
-        return relPos.normalize().multiply(NotesManager.CLAMP_DIST);
+    private Vec3 clampRelativePos(Vec3 relPos) {
+        return relPos.normalize().scale(NotesManager.CLAMP_DIST);
     }
 
-    public static void draw(DrawContext context, int x, int y, int width, int height, Identifier icon) {
-        context.drawSpriteStretched(
-                RenderLayer::getGuiTextured,
-                ((SpriteAtlasHolderAccessor) MinecraftClient.getInstance().getMapDecorationsAtlasManager()).stickynotes_getSprite(icon),
+    public static void draw(GuiGraphics context, int x, int y, int width, int height, ResourceLocation icon) {
+        context.blitSprite(
+                RenderType::guiTextured,
+                ((SpriteAtlasHolderAccessor) Minecraft.getInstance().getMapDecorationTextures()).stickynotes_getSprite(icon),
                 x, y,
                 width, height
         );
     }
 
-    public static Box createBox(Vec3d pos) {
-        return new Box(
+    public static AABB createBox(Vec3 pos) {
+        return new AABB(
                 pos.x - 0.25, pos.y, pos.z - 0.25,
                 pos.x + 0.25, pos.y + 0.5, pos.z + 0.25
         );
     }
 
-    public static Vec3d raycastPos(Entity entity) {
-        HitResult result = entity.raycast(50.0, 1.0F, false);
-        Vec3d pos = result.getPos();
+    public static Vec3 raycastPos(Entity entity) {
+        HitResult result = entity.pick(50.0, 1.0F, false);
+        Vec3 pos = result.getLocation();
         if (!(result instanceof BlockHitResult blockHit)) return pos;
-        Direction side = blockHit.getSide();
+        Direction side = blockHit.getDirection();
         return switch (side) {
             case UP: yield pos;
             case DOWN: yield pos.add(0.0, -0.5, 0.0);
-            default: yield pos.offset(side, 0.25);
+            default: yield pos.relative(side, 0.25);
         };
     }
 }

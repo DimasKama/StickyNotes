@@ -30,12 +30,11 @@ repositories {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modCompileOnly "maven.modrinth:iris:${project.iris_version}"
 }
 
 processResources {
@@ -105,7 +104,7 @@ if (modrinthToken) {
         versionNumber = project.mod_version
         versionType = "release" // This is the default -- can also be `beta` or `alpha`
         uploadFile = remapJar
-        gameVersions = ["1.21.6", "1.21.7", "1.21.8"] // Must be an array, even with only one version
+        gameVersions = ["1.21.4"] // Must be an array, even with only one version
         dependencies { // A special DSL for creating dependencies
             // scope.type
             // The scope can be `required`, `optional`, `incompatible`, or `embedded`
