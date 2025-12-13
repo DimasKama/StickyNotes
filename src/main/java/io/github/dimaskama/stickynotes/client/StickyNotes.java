@@ -7,12 +7,12 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ServerInfo;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.server.integrated.IntegratedServer;
-import net.minecraft.util.Nullables;
+import net.minecraft.Optionull;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.server.IntegratedServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +25,7 @@ public class StickyNotes implements ClientModInitializer {
     public static final Logger LOGGER = LogManager.getLogger("StickyNotes");
     public static final NotesConfig CONFIG = new NotesConfig("config/stickynotes.json");
     public static final NotesManager NOTES_MANAGER = new NotesManager();
-    public static final KeyBinding OPEN_NOTES_LIST_KEY = new KeyBinding("stickynotes.open_list", GLFW.GLFW_KEY_N, MOD_ID);
+    public static final KeyMapping OPEN_NOTES_LIST_KEY = new KeyMapping("stickynotes.open_list", GLFW.GLFW_KEY_N, MOD_ID);
 
     @Override
     public void onInitializeClient() {
@@ -40,18 +40,18 @@ public class StickyNotes implements ClientModInitializer {
 
     @Nullable
     public static List<Note> getCurrentWorldNotes() {
-        return Nullables.map(getCurrentWorldId(), CONFIG.getData().worldToNotes::get);
+        return Optionull.map(getCurrentWorldId(), CONFIG.getData().worldToNotes::get);
     }
 
     @Nullable
     public static String getCurrentWorldId() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        ClientWorld world = client.world;
+        Minecraft client = Minecraft.getInstance();
+        ClientLevel world = client.level;
         if (world == null) return null;
-        ServerInfo info = client.getCurrentServerEntry();
-        if (info != null) return info.address + ":" + world.getRegistryKey().getValue().toString();
-        IntegratedServer integratedServer = client.getServer();
+        ServerData info = client.getCurrentServer();
+        if (info != null) return info.ip + ":" + world.dimension().location().toString();
+        IntegratedServer integratedServer = client.getSingleplayerServer();
         if (integratedServer == null) return null;
-        return integratedServer.getSaveProperties().getLevelName() + ":" + world.getRegistryKey().getValue().toString();
+        return integratedServer.getWorldData().getLevelName() + ":" + world.dimension().location().toString();
     }
 }
