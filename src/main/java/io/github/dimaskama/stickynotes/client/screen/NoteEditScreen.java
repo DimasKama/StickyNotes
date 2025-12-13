@@ -2,7 +2,6 @@ package io.github.dimaskama.stickynotes.client.screen;
 
 import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
-import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import io.github.dimaskama.stickynotes.mixin.SpriteAtlasTextureAccessor;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -12,7 +11,10 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -87,7 +89,7 @@ public class NoteEditScreen extends Screen {
 
         int iconsInRow = WIDTH / 10;
         int i = 0;
-        for (ResourceLocation icon : ((SpriteAtlasTextureAccessor) ((SpriteAtlasHolderAccessor) minecraft.getMapDecorationTextures()).stickynotes_getAtlas()).stickynotes_getSprites().keySet()) {
+        for (ResourceLocation icon : ((SpriteAtlasTextureAccessor) (minecraft.getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS))).stickynotes_getSprites().keySet()) {
             if (icon.equals(MissingTextureAtlasSprite.getLocation())) continue;
             addRenderableWidget(new IconButton(left + (i % iconsInRow) * 10, top + 50 + (i / iconsInRow) * 10, 10, icon));
             ++i;
@@ -101,10 +103,10 @@ public class NoteEditScreen extends Screen {
         addPosField(left + posWidth + 4 + ww, top + 75, ww, "Y", noteY, d -> noteY = d);
         addPosField(left + posWidth + 4 + ww + ww, top + 75, ww, "Z", noteZ, d -> noteZ = d);
 
-        boolean inWorld = minecraft.cameraEntity != null;
+        boolean inWorld = minecraft.getCameraEntity() != null;
 
         SquareButton moveToPlayerButton = new SquareButton(left + WIDTH - 45, top + 75, 0, () -> {
-            Entity camera = minecraft.cameraEntity;
+            Entity camera = minecraft.getCameraEntity();
             if (camera == null) return;
             note.pos = camera.position();
             rebuildWidgets();
@@ -114,7 +116,7 @@ public class NoteEditScreen extends Screen {
         addRenderableWidget(moveToPlayerButton);
 
         SquareButton moveToLookPosButton = new SquareButton(left + WIDTH - 20, top + 75, 1, () -> {
-            Entity camera = minecraft.cameraEntity;
+            Entity camera = minecraft.getCameraEntity();
             if (camera == null) return;
             note.pos = Note.raycastPos(camera);
             rebuildWidgets();
@@ -212,7 +214,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        public void onClick(double mouseX, double mouseY) {
+        public void onClick(MouseButtonEvent click, boolean doubled) {
             note.icon = icon;
         }
 
@@ -236,6 +238,7 @@ public class NoteEditScreen extends Screen {
         @Override
         protected void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
             context.blit(
+                    RenderPipelines.GUI_TEXTURED,
                     BUTTONS_TEXTURE,
                     getX(), getY(),
                     u,
@@ -250,7 +253,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        public void onClick(double mouseX, double mouseY) {
+        public void onClick(MouseButtonEvent click, boolean doubled) {
             clickAction.run();
         }
 

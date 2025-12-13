@@ -35,7 +35,7 @@ public class NotesListScreen extends Screen {
         int x = (width - 120 - 10 - 120) >> 1;
         int y = height - 54;
         addRenderableWidget(Button.builder(Component.translatable("stickynotes.add_note"), button -> {
-            Entity camera = minecraft.cameraEntity;
+            Entity camera = minecraft.getCameraEntity();
             Note note = new Note(
                     camera != null ? Note.raycastPos(camera) : Vec3.ZERO,
                     Component.literal("Note " + (notes.size() + 1)),

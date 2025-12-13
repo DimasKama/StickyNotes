@@ -2,10 +2,11 @@ package io.github.dimaskama.stickynotes.client;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.dimaskama.stickynotes.mixin.SpriteAtlasHolderAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Direction;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.ResourceLocation;
@@ -70,11 +71,11 @@ public class Note {
     }
 
     public static void draw(GuiGraphics context, int x, int y, int width, int height, ResourceLocation icon) {
-        context.blit(
+        context.blitSprite(
+                RenderPipelines.GUI_TEXTURED,
+                Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS).getSprite(icon),
                 x, y,
-                0,
-                width, height,
-                ((SpriteAtlasHolderAccessor) Minecraft.getInstance().getMapDecorationTextures()).stickynotes_getSprite(icon)
+                width, height
         );
     }
 

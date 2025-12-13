@@ -7,8 +7,8 @@
   ],
   "client": [
     "ClickableWidgetInvoker",
-    "SpriteAtlasHolderAccessor",
-    "SpriteAtlasTextureAccessor"
+    "SpriteAtlasTextureAccessor",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

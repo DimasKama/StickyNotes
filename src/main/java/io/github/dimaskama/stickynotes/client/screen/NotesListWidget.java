@@ -35,7 +35,7 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
             }
         } else if (size < entryCount) {
             for (int i = size; i < entryCount; i++) {
-                remove(size);
+                removeEntry(children().get(size));
             }
         }
     }
@@ -77,10 +77,15 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
         }
 
         @Override
-        public void render(GuiGraphics context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+        public void renderContent(GuiGraphics context, int mouseX, int mouseY, boolean hovered, float delta) {
+            int index = NotesListWidget.this.children().indexOf(this);
             if (index >= notes.size()) return;
             Note note = notes.get(index);
             this.note = note;
+            int x = getContentX();
+            int y = getContentY();
+            int entryWidth = getContentWidth();
+            int entryHeight = getContentHeight();
             context.fill(x, y, x + entryWidth, y + entryHeight, hovered ? 0x50FFFFFF : 0x20FFFFFF);
             int iconSide = entryHeight - 4;
             Note.draw(context, x + 2, y + 2, iconSide, iconSide, note.icon);
@@ -103,7 +108,7 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
                     && !deleteButton.isMouseOver(mouseX, mouseY)
                     && !note.description.getString().isBlank()
             ) {
-                context.renderTooltip(textRenderer, note.description, mouseX, mouseY);
+                context.setTooltipForNextFrame(textRenderer, note.description, mouseX, mouseY);
             }
             String posText = (int) note.pos.x + " " + (int) note.pos.y + " " + (int) note.pos.z;
             context.drawString(textRenderer, posText, editButton.getX() - 2 - textRenderer.width(posText), y + ((entryHeight - 9) >> 1), 0xFFBBBBBB, false);

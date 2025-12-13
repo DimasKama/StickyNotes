@@ -99,7 +99,11 @@ public class WorldsNotesList extends ContainerObjectSelectionList<WorldsNotesLis
         }
 
         @Override
-        public void render(GuiGraphics context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
+        public void renderContent(GuiGraphics context, int mouseX, int mouseY, boolean hovered, float delta) {
+            int x = getContentX();
+            int y = getContentY();
+            int entryWidth = getContentWidth();
+            int entryHeight = getContentHeight();
             context.fill(x, y, x + entryWidth, y + entryHeight, hovered ? 0x50FFFFFF : 0x20FFFFFF);
             Font textRenderer = Minecraft.getInstance().font;
             int textX = x + 8;
