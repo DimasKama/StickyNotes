@@ -3,7 +3,6 @@ package io.github.dimaskama.stickynotes.client.screen;
 import com.google.common.collect.ArrayListMultimap;
 import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
-import io.github.dimaskama.stickynotes.mixin.ClickableWidgetInvoker;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -117,13 +116,12 @@ public class WorldsNotesList extends ContainerObjectSelectionList<WorldsNotesLis
                         0xFFFFFFFF
                 );
             } else {
-                ClickableWidgetInvoker.stickynotes_drawScrollableText(
-                        context,
-                        textRenderer,
+                context.textRenderer().acceptScrollingWithDefaultCenter(
                         keyText,
-                        textX, textY,
-                        textX + freeTextWidth, textY + 10,
-                        0xFFFFFFFF
+                        textX,
+                        freeTextWidth,
+                        textY,
+                        textY + 10
                 );
             }
 

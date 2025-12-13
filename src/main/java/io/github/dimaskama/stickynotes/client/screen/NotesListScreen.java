@@ -10,7 +10,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
@@ -40,7 +40,7 @@ public class NotesListScreen extends Screen {
                     camera != null ? Note.raycastPos(camera) : Vec3.ZERO,
                     Component.literal("Note " + (notes.size() + 1)),
                     Component.empty(),
-                    ResourceLocation.parse("player"),
+                    Identifier.parse("player"),
                     false
             );
             notes.add(note);

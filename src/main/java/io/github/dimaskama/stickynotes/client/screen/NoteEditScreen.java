@@ -17,7 +17,7 @@ import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +35,7 @@ public class NoteEditScreen extends Screen {
     private boolean descDirty;
     private boolean posDirty;
     private double noteX, noteY, noteZ;
-    private ResourceLocation hoveredIcon = null;
+    private Identifier hoveredIcon = null;
 
     public NoteEditScreen(@Nullable Screen parent, Note note, boolean edit) {
         super(Component.translatable(edit ? "stickynotes.edit_note" : "stickynotes.add_note"));
@@ -89,7 +89,7 @@ public class NoteEditScreen extends Screen {
 
         int iconsInRow = WIDTH / 10;
         int i = 0;
-        for (ResourceLocation icon : ((SpriteAtlasTextureAccessor) (minecraft.getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS))).stickynotes_getSprites().keySet()) {
+        for (Identifier icon : ((SpriteAtlasTextureAccessor) (minecraft.getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS))).stickynotes_getSprites().keySet()) {
             if (icon.equals(MissingTextureAtlasSprite.getLocation())) continue;
             addRenderableWidget(new IconButton(left + (i % iconsInRow) * 10, top + 50 + (i / iconsInRow) * 10, 10, icon));
             ++i;
@@ -183,7 +183,7 @@ public class NoteEditScreen extends Screen {
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredString(font, title, width >>> 1, height / 20 - 5, 0xFFFFFFFF);
-        ResourceLocation icon = hoveredIcon != null ? hoveredIcon : note.icon;
+        Identifier icon = hoveredIcon != null ? hoveredIcon : note.icon;
         int iconSize = height / 10;
         Note.draw(context, (width - iconSize) >> 1, iconSize, iconSize, iconSize, icon);
         hoveredIcon = null;
@@ -195,9 +195,9 @@ public class NoteEditScreen extends Screen {
     }
 
     private class IconButton extends AbstractWidget {
-        public final ResourceLocation icon;
+        public final Identifier icon;
 
-        public IconButton(int x, int y, int sideSize, ResourceLocation icon) {
+        public IconButton(int x, int y, int sideSize, Identifier icon) {
             super(x, y, sideSize, sideSize, CommonComponents.EMPTY);
             this.icon = icon;
         }
@@ -225,7 +225,7 @@ public class NoteEditScreen extends Screen {
     }
 
     private static class SquareButton extends AbstractWidget {
-        private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(StickyNotes.MOD_ID, "textures/gui/buttons.png");
+        private static final Identifier BUTTONS_TEXTURE = Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "textures/gui/buttons.png");
         private final Runnable clickAction;
         private final int u;
 

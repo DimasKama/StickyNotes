@@ -13,7 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +26,7 @@ public class StickyNotes implements ClientModInitializer {
     public static final Logger LOGGER = LogManager.getLogger("StickyNotes");
     public static final NotesConfig CONFIG = new NotesConfig("config/stickynotes.json");
     public static final NotesManager NOTES_MANAGER = new NotesManager();
-    public static final KeyMapping.Category KEY_CATEGORY = new KeyMapping.Category(ResourceLocation.fromNamespaceAndPath(MOD_ID, MOD_ID));
+    public static final KeyMapping.Category KEY_CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath(MOD_ID, MOD_ID));
     public static final KeyMapping OPEN_NOTES_LIST_KEY = new KeyMapping("stickynotes.open_list", GLFW.GLFW_KEY_N, KEY_CATEGORY);
 
     @Override
@@ -34,7 +34,7 @@ public class StickyNotes implements ClientModInitializer {
         CONFIG.loadOrCreate();
         ClientLifecycleEvents.CLIENT_STOPPING.register(CONFIG::onClientStopping);
         ClientTickEvents.END_CLIENT_TICK.register(NOTES_MANAGER::tick);
-        HudElementRegistry.addLast(ResourceLocation.fromNamespaceAndPath(MOD_ID, "notes"), NOTES_MANAGER::renderHud);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "notes"), NOTES_MANAGER::renderHud);
         KeyBindingHelper.registerKeyBinding(OPEN_NOTES_LIST_KEY);
         IrisIntegration.init();
     }
@@ -50,9 +50,9 @@ public class StickyNotes implements ClientModInitializer {
         ClientLevel world = client.level;
         if (world == null) return null;
         ServerData info = client.getCurrentServer();
-        if (info != null) return info.ip + ":" + world.dimension().location().toString();
+        if (info != null) return info.ip + ":" + world.dimension().identifier().toString();
         IntegratedServer integratedServer = client.getSingleplayerServer();
         if (integratedServer == null) return null;
-        return integratedServer.getWorldData().getLevelName() + ":" + world.dimension().location().toString();
+        return integratedServer.getWorldData().getLevelName() + ":" + world.dimension().identifier().toString();
     }
 }

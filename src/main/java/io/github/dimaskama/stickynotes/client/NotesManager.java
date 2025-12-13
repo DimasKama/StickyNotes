@@ -10,14 +10,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.HitResult;
@@ -35,28 +35,24 @@ public class NotesManager {
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
     public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
-            .withLocation(ResourceLocation.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes"))
+            .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes"))
             .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
             .build();
     private static final RenderType RENDER_LAYER = RenderType.create(
             "stickynotes",
-            1536,
-            RENDER_PIPELINE,
-            RenderType.CompositeState.builder()
-                    .setTextureState(new RenderStateShard.TextureStateShard(ResourceLocation.withDefaultNamespace("textures/atlas/map_decorations.png"), false))
-                    .createCompositeState(false)
+            RenderSetup.builder(RENDER_PIPELINE)
+                    .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/map_decorations.png"))
+                    .createRenderSetup()
     );
     public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
-            .withLocation(ResourceLocation.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes_see_through"))
+            .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes_see_through"))
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
             .build();
     private static final RenderType RENDER_LAYER_SEE_THROUGH = RenderType.create(
             "stickynotes_see_through",
-            1536,
-            RENDER_PIPELINE_SEE_THROUGH,
-            RenderType.CompositeState.builder()
-                    .setTextureState(new RenderStateShard.TextureStateShard(ResourceLocation.withDefaultNamespace("textures/atlas/map_decorations.png"), false))
-                    .createCompositeState(false)
+            RenderSetup.builder(RENDER_PIPELINE_SEE_THROUGH)
+                    .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/map_decorations.png"))
+                    .createRenderSetup()
     );
     @Nullable
     private Note targetedNote;
@@ -117,8 +113,8 @@ public class NotesManager {
 
         Camera cameraObj = Minecraft.getInstance().gameRenderer.getMainCamera();
         Quaternionf rotation = new Quaternionf().rotationYXZ(
-                Mth.DEG_TO_RAD * (180.0F - cameraObj.getYRot()),
-                Mth.DEG_TO_RAD * (-cameraObj.getXRot() * 0.4F),
+                Mth.DEG_TO_RAD * (180.0F - cameraObj.yRot()),
+                Mth.DEG_TO_RAD * (-cameraObj.xRot() * 0.4F),
                 0.0F
         );
 

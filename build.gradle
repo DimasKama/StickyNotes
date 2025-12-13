@@ -105,7 +105,7 @@ if (modrinthToken) {
         versionNumber = project.mod_version
         versionType = "release" // This is the default -- can also be `beta` or `alpha`
         uploadFile = remapJar
-        gameVersions = ["1.21.9", "1.21.10"] // Must be an array, even with only one version
+        gameVersions = ["1.21.11"] // Must be an array, even with only one version
         dependencies { // A special DSL for creating dependencies
             // scope.type
             // The scope can be `required`, `optional`, `incompatible`, or `embedded`

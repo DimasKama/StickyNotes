@@ -6,9 +6,8 @@
   "mixins": [
   ],
   "client": [
-    "ClickableWidgetInvoker",
     "SpriteAtlasTextureAccessor",
-    "WorldRendererMixin"
+    "LevelRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

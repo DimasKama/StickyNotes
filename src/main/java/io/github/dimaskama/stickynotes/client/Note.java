@@ -9,7 +9,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -22,18 +22,18 @@ public class Note {
                     Vec3.CODEC.fieldOf("pos").forGetter(n -> n.pos),
                     ComponentSerialization.CODEC.fieldOf("name").forGetter(n -> n.name),
                     ComponentSerialization.CODEC.fieldOf("description").forGetter(n -> n.description),
-                    ResourceLocation.CODEC.fieldOf("icon").forGetter(n -> n.icon),
+                    Identifier.CODEC.fieldOf("icon").forGetter(n -> n.icon),
                     Codec.BOOL.fieldOf("see_through").forGetter(n -> n.seeThrough)
             ).apply(instance, Note::new)
     );
     public Vec3 pos;
     public Component name;
     public Component description;
-    public ResourceLocation icon;
+    public Identifier icon;
     public boolean seeThrough;
     private AABB box;
 
-    public Note(Vec3 pos, Component name, Component description, ResourceLocation icon, boolean seeThrough) {
+    public Note(Vec3 pos, Component name, Component description, Identifier icon, boolean seeThrough) {
         this.pos = pos;
         this.name = name;
         this.description = description;
@@ -70,7 +70,7 @@ public class Note {
         return relPos.normalize().scale(NotesManager.CLAMP_DIST);
     }
 
-    public static void draw(GuiGraphics context, int x, int y, int width, int height, ResourceLocation icon) {
+    public static void draw(GuiGraphics context, int x, int y, int width, int height, Identifier icon) {
         context.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS).getSprite(icon),
