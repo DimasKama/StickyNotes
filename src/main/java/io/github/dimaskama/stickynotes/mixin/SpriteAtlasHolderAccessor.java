@@ -1,18 +1,18 @@
 package io.github.dimaskama.stickynotes.mixin;
 
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasHolder;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.TextureAtlasHolder;
+import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(SpriteAtlasHolder.class)
+@Mixin(TextureAtlasHolder.class)
 public interface SpriteAtlasHolderAccessor {
-    @Accessor("atlas")
-    SpriteAtlasTexture stickynotes_getAtlas();
+    @Accessor("textureAtlas")
+    TextureAtlas stickynotes_getAtlas();
 
     @Invoker("getSprite")
-    Sprite stickynotes_getSprite(Identifier objectId);
+    TextureAtlasSprite stickynotes_getSprite(ResourceLocation objectId);
 }
