@@ -2,17 +2,17 @@ package io.github.dimaskama.stickynotes.client.screen;
 
 import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.entity.Entity;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
 public class NotesListScreen extends Screen {
     @Nullable
@@ -22,7 +22,7 @@ public class NotesListScreen extends Screen {
     private final boolean saveOnClose;
 
     public NotesListScreen(@Nullable Screen parent, List<Note> notes, boolean saveOnClose) {
-        super(Text.translatable("stickynotes.notes_list"));
+        super(Component.translatable("stickynotes.notes_list"));
         this.parent = parent;
         this.notes = notes;
         this.saveOnClose = saveOnClose;
@@ -30,33 +30,33 @@ public class NotesListScreen extends Screen {
 
     @Override
     protected void init() {
-        notesListWidget = new NotesListWidget(client, width, height - 96, 32, this, notes);
-        addDrawableChild(notesListWidget);
+        notesListWidget = new NotesListWidget(minecraft, width, height - 96, 32, this, notes);
+        addRenderableWidget(notesListWidget);
         int x = (width - 120 - 10 - 120) >> 1;
         int y = height - 54;
-        addDrawableChild(ButtonWidget.builder(Text.translatable("stickynotes.add_note"), button -> {
-            Entity camera = client.cameraEntity;
+        addRenderableWidget(Button.builder(Component.translatable("stickynotes.add_note"), button -> {
+            Entity camera = minecraft.cameraEntity;
             Note note = new Note(
-                    camera != null ? Note.raycastPos(camera) : Vec3d.ZERO,
-                    Text.literal("Note " + (notes.size() + 1)),
-                    Text.empty(),
-                    Identifier.of("player"),
+                    camera != null ? Note.raycastPos(camera) : Vec3.ZERO,
+                    Component.literal("Note " + (notes.size() + 1)),
+                    Component.empty(),
+                    ResourceLocation.parse("player"),
                     false
             );
             notes.add(note);
-            client.setScreen(new NoteEditScreen(this, note, false));
+            minecraft.setScreen(new NoteEditScreen(this, note, false));
             StickyNotes.CONFIG.markDirty();
-        }).dimensions(x, y, 250, 20).build());
+        }).bounds(x, y, 250, 20).build());
         y += 25;
-        addDrawableChild(ButtonWidget.builder(Text.translatable("stickynotes.other_worlds_notes"), button -> {
+        addRenderableWidget(Button.builder(Component.translatable("stickynotes.other_worlds_notes"), button -> {
             if (parent instanceof WorldsNotesScreen) {
-                close();
+                onClose();
             } else {
-                client.setScreen(new WorldsNotesScreen(this, false));
+                minecraft.setScreen(new WorldsNotesScreen(this, false));
             }
-        }).dimensions(x, y, 120, 20).build());
-        addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> close())
-                .dimensions(x + 120 + 10, y, 120, 20).build());
+        }).bounds(x, y, 120, 20).build());
+        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
+                .bounds(x + 120 + 10, y, 120, 20).build());
     }
 
     @Override
@@ -65,16 +65,16 @@ public class NotesListScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(textRenderer, title, width >>> 1, 12, 0xFFFFFFFF);
+        context.drawCenteredString(font, title, width >>> 1, 12, 0xFFFFFFFF);
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         if (saveOnClose) {
             StickyNotes.CONFIG.saveIfDirty(true);
         }
-        client.setScreen(parent);
+        minecraft.setScreen(parent);
     }
 }
