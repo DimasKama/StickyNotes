@@ -5,10 +5,9 @@ import com.google.common.collect.Multimaps;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.dimaskama.stickynotes.client.Note;
-import net.minecraft.client.MinecraftClient;
-
 import java.util.List;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
 
 public class NotesConfig extends JsonConfig<NotesConfig.Data>{
     public static final Codec<Data> CODEC = RecordCodecBuilder.create(
@@ -36,7 +35,7 @@ public class NotesConfig extends JsonConfig<NotesConfig.Data>{
         dirty = true;
     }
 
-    public void onClientStopping(MinecraftClient client) {
+    public void onClientStopping(Minecraft client) {
         saveIfDirty(false);
     }
 
