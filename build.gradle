@@ -1,7 +1,7 @@
 plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT'
     id 'maven-publish'
-    id "com.modrinth.minotaur" version "2.+"
+    id "me.modmuss50.mod-publish-plugin" version "1.1.0"
 }
 
 version = project.mod_version
@@ -97,20 +97,26 @@ publishing {
     }
 }
 
-def modrinthToken = System.getenv("MODRINTH_TOKEN")
-if (modrinthToken) {
+publishMods {
+    file = remapJar.archiveFile
+    changelog = file('changelog.md').text
+    type = STABLE
+    modLoaders.add("fabric")
+
     modrinth {
-        token = modrinthToken
-        projectId = "stickynotes"
-        versionNumber = project.mod_version
-        versionType = "release" // This is the default -- can also be `beta` or `alpha`
-        uploadFile = remapJar
-        gameVersions = ["1.21.11"] // Must be an array, even with only one version
-        dependencies { // A special DSL for creating dependencies
-            // scope.type
-            // The scope can be `required`, `optional`, `incompatible`, or `embedded`
-            // The type can either be `project` or `version`
-            required.project "fabric-api"
+        projectId = "wmgCVnQz"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.add(minecraft_version)
+        requires {
+            slug = "fabric-api"
         }
+    }
+    curseforge {
+        projectId = "1421342"
+        projectSlug = "stickynotes"
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersions.add(minecraft_version)
+        requires("fabric-api")
+        clientRequired = true
     }
 }
