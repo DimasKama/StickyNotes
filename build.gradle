@@ -35,7 +35,6 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modCompileOnly "maven.modrinth:iris:${project.iris_version}"
 }
 
 processResources {
@@ -97,14 +96,6 @@ publishMods {
     type = STABLE
     modLoaders.add("fabric")
 
-    modrinth {
-        projectId = "wmgCVnQz"
-        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-        minecraftVersions.add(minecraft_version)
-        requires {
-            slug = "fabric-api"
-        }
-    }
     curseforge {
         projectId = "1421342"
         projectSlug = "stickynotes"
