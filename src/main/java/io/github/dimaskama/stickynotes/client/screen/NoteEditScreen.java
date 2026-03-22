@@ -3,7 +3,7 @@ package io.github.dimaskama.stickynotes.client.screen;
 import io.github.dimaskama.stickynotes.client.Note;
 import io.github.dimaskama.stickynotes.client.StickyNotes;
 import io.github.dimaskama.stickynotes.mixin.SpriteAtlasTextureAccessor;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -180,9 +180,9 @@ public class NoteEditScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
-        context.drawCenteredString(font, title, width >>> 1, height / 20 - 5, 0xFFFFFFFF);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        context.centeredText(font, title, width >>> 1, height / 20 - 5, 0xFFFFFFFF);
         Identifier icon = hoveredIcon != null ? hoveredIcon : note.icon;
         int iconSize = height / 10;
         Note.draw(context, (width - iconSize) >> 1, iconSize, iconSize, iconSize, icon);
@@ -203,7 +203,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
             if (isHovered()) {
                 hoveredIcon = icon;
             }
@@ -236,7 +236,7 @@ public class NoteEditScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        protected void extractWidgetRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
             context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     BUTTONS_TEXTURE,

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.Tooltip;
@@ -98,7 +98,7 @@ public class WorldsNotesList extends ContainerObjectSelectionList<WorldsNotesLis
         }
 
         @Override
-        public void renderContent(GuiGraphics context, int mouseX, int mouseY, boolean hovered, float delta) {
+        public void extractContent(GuiGraphicsExtractor context, int mouseX, int mouseY, boolean hovered, float delta) {
             int x = getContentX();
             int y = getContentY();
             int entryWidth = getContentWidth();
@@ -109,7 +109,7 @@ public class WorldsNotesList extends ContainerObjectSelectionList<WorldsNotesLis
             int textY = y + ((entryHeight - 10) >> 1);
             int freeTextWidth = entryWidth - buttonsWidth - 8 - 8;
             if (freeTextWidth >= textRenderer.width(keyText)) {
-                context.drawString(
+                context.text(
                         textRenderer,
                         keyText,
                         textX, textY,
@@ -129,7 +129,7 @@ public class WorldsNotesList extends ContainerObjectSelectionList<WorldsNotesLis
             int buttonY = y + ((entryHeight - 16) >> 1);
             for (Button button : buttons) {
                 button.setPosition(buttonX, buttonY);
-                button.render(context, mouseX, mouseY, delta);
+                button.extractRenderState(context, mouseX, mouseY, delta);
                 buttonX += button.getWidth() + 2;
             }
         }

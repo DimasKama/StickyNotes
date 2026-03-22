@@ -1,19 +1,22 @@
 package io.github.dimaskama.stickynotes.client;
 
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
@@ -36,7 +39,7 @@ public class NotesManager {
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
     public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes"))
-            .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
             .build();
     private static final RenderType RENDER_LAYER = RenderType.create(
             "stickynotes",
@@ -46,7 +49,7 @@ public class NotesManager {
     );
     public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes_see_through"))
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
             .build();
     private static final RenderType RENDER_LAYER_SEE_THROUGH = RenderType.create(
             "stickynotes_see_through",
@@ -94,22 +97,22 @@ public class NotesManager {
         }
     }
 
-    public void renderAfterEntities(CameraRenderState camera, SubmitNodeCollector queue) {
-        renderNotes(camera, queue, StickyNotes.getCurrentWorldNotes(), false);
+    public void renderAfterEntities(CameraRenderState camera, MultiBufferSource.BufferSource bufferSource) {
+        renderNotes(camera, bufferSource, StickyNotes.getCurrentWorldNotes(), false);
     }
 
-    public void renderLast(CameraRenderState camera, SubmitNodeCollector queue) {
-        renderNotes(camera, queue, StickyNotes.getCurrentWorldNotes(), true);
+    public void renderLast(CameraRenderState camera, MultiBufferSource.BufferSource bufferSource) {
+        renderNotes(camera, bufferSource, StickyNotes.getCurrentWorldNotes(), true);
     }
 
-    private static void renderNotes(CameraRenderState camera, SubmitNodeCollector queue, List<Note> notes, boolean seeThrough) {
+    private static void renderNotes(CameraRenderState camera, MultiBufferSource.BufferSource bufferSource, List<Note> notes, boolean seeThrough) {
         if (notes == null || notes.isEmpty()) return;
 
         RenderType renderLayer = seeThrough ? RENDER_LAYER_SEE_THROUGH : RENDER_LAYER;
 
         PoseStack matrices = new PoseStack();
         TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS);
-        float viewDistanceSq = Mth.square(Minecraft.getInstance().gameRenderer.getRenderDistance() * 2.0F);
+        float viewDistanceSq = Mth.square(Minecraft.getInstance().options.getEffectiveRenderDistance() * 32.0F);
 
         Camera cameraObj = Minecraft.getInstance().gameRenderer.getMainCamera();
         Quaternionf rotation = new Quaternionf().rotationYXZ(
@@ -130,17 +133,16 @@ public class NotesManager {
             float v1 = sprite.getV0();
             float u2 = sprite.getU1();
             float v2 = sprite.getV1();
-            queue.submitCustomGeometry(matrices, renderLayer, (matrix, consumer) -> {
-                consumer.addVertex(matrix, -HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u1, v1).setColor(-1);
-                consumer.addVertex(matrix, -HALF_SIZE_IN_WORLD, 0, 0).setUv(u1, v2).setColor(-1);
-                consumer.addVertex(matrix, HALF_SIZE_IN_WORLD, 0, 0).setUv(u2, v2).setColor(-1);
-                consumer.addVertex(matrix, HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u2, v1).setColor(-1);
-            });
+            VertexConsumer consumer = bufferSource.getBuffer(renderLayer);
+            consumer.addVertex(matrices.last(), -HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u1, v1).setColor(-1);
+            consumer.addVertex(matrices.last(), -HALF_SIZE_IN_WORLD, 0, 0).setUv(u1, v2).setColor(-1);
+            consumer.addVertex(matrices.last(), HALF_SIZE_IN_WORLD, 0, 0).setUv(u2, v2).setColor(-1);
+            consumer.addVertex(matrices.last(), HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u2, v1).setColor(-1);
             matrices.popPose();
         }
     }
 
-    public void renderHud(GuiGraphics context, DeltaTracker tickCounter) {
+    public void renderHud(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
         Note note = targetedNote;
         if (note == null || Minecraft.getInstance().hasShiftDown()) return;
         int time = noteTargetTime;
@@ -152,7 +154,7 @@ public class NotesManager {
         Font textRenderer = Minecraft.getInstance().font;
         int x = (context.guiWidth() >>> 1) + 5;
         int y = (context.guiHeight() >>> 1) + 5;
-        context.drawString(
+        context.text(
                 textRenderer,
                 note.name,
                 x, y,
@@ -163,7 +165,7 @@ public class NotesManager {
                 ? (int) (Mth.clamp(((time - 26) + delta) / 4.0F, 0.0F, 1.0F) * 255.0F)
                 : 0xFF;
         if (descAlphaMask < 4) return;
-        context.drawWordWrap(
+        context.textWithWordWrap(
                 textRenderer,
                 note.description,
                 x, y,

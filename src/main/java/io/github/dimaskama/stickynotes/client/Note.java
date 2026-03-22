@@ -3,7 +3,7 @@ package io.github.dimaskama.stickynotes.client;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Direction;
 import net.minecraft.data.AtlasIds;
@@ -70,7 +70,7 @@ public class Note {
         return relPos.normalize().scale(NotesManager.CLAMP_DIST);
     }
 
-    public static void draw(GuiGraphics context, int x, int y, int width, int height, Identifier icon) {
+    public static void draw(GuiGraphicsExtractor context, int x, int y, int width, int height, Identifier icon) {
         context.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS).getSprite(icon),

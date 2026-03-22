@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -77,7 +77,7 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
         }
 
         @Override
-        public void renderContent(GuiGraphics context, int mouseX, int mouseY, boolean hovered, float delta) {
+        public void extractContent(GuiGraphicsExtractor context, int mouseX, int mouseY, boolean hovered, float delta) {
             int index = NotesListWidget.this.children().indexOf(this);
             if (index >= notes.size()) return;
             Note note = notes.get(index);
@@ -90,7 +90,7 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
             int iconSide = entryHeight - 4;
             Note.draw(context, x + 2, y + 2, iconSide, iconSide, note.icon);
             Font textRenderer = Minecraft.getInstance().font;
-            context.drawString(
+            context.text(
                     textRenderer,
                     note.name,
                     x + 6 + iconSide, y + 6,
@@ -98,10 +98,10 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
             );
             editButton.setX(x + entryWidth - 2 - deleteButton.getWidth() - 2 - editButton.getWidth());
             editButton.setY(y + ((entryHeight - editButton.getHeight()) >> 1));
-            editButton.render(context, mouseX, mouseY, delta);
+            editButton.extractRenderState(context, mouseX, mouseY, delta);
             deleteButton.setX(x + entryWidth - 2 - deleteButton.getWidth());
             deleteButton.setY(y + ((entryHeight - deleteButton.getHeight()) >> 1));
-            deleteButton.render(context, mouseX, mouseY, delta);
+            deleteButton.extractRenderState(context, mouseX, mouseY, delta);
             if (
                     hovered
                     && !editButton.isMouseOver(mouseX, mouseY)
@@ -111,7 +111,7 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
                 context.setTooltipForNextFrame(textRenderer, note.description, mouseX, mouseY);
             }
             String posText = (int) note.pos.x + " " + (int) note.pos.y + " " + (int) note.pos.z;
-            context.drawString(textRenderer, posText, editButton.getX() - 2 - textRenderer.width(posText), y + ((entryHeight - 9) >> 1), 0xFFBBBBBB, false);
+            context.text(textRenderer, posText, editButton.getX() - 2 - textRenderer.width(posText), y + ((entryHeight - 9) >> 1), 0xFFBBBBBB, false);
         }
     }
 }
