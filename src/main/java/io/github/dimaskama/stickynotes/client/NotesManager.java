@@ -1,19 +1,23 @@
 package io.github.dimaskama.stickynotes.client;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
-import net.minecraft.client.Camera;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.feature.CustomFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -37,9 +41,20 @@ public class NotesManager {
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
-    public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+    // Same as vanilla's private RenderPipelines.GUI_TEXTURED_SNIPPET
+    private static final RenderPipeline.Snippet TEXTURED_SNIPPET = RenderPipeline.builder()
+            .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+            .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+            .withVertexShader("core/position_tex_color")
+            .withFragmentShader("core/position_tex_color")
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
+            .buildSnippet();
+    public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(TEXTURED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes"))
-            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
+            .withDepthStencilState(DepthStencilState.DEFAULT)
             .build();
     private static final RenderType RENDER_LAYER = RenderType.create(
             "stickynotes",
@@ -47,7 +62,7 @@ public class NotesManager {
                     .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/map_decorations.png"))
                     .createRenderSetup()
     );
-    public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+    public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(TEXTURED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes_see_through"))
             .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
             .build();
@@ -93,31 +108,30 @@ public class NotesManager {
 
         // handle input
         if (StickyNotes.OPEN_NOTES_LIST_KEY.isDown() && notes != null) {
-            client.setScreen(new NotesListScreen(client.screen, notes, true));
+            client.gui.setScreen(new NotesListScreen(client.gui.screen(), notes, true));
         }
     }
 
-    public void renderAfterEntities(CameraRenderState camera, MultiBufferSource.BufferSource bufferSource) {
-        renderNotes(camera, bufferSource, StickyNotes.getCurrentWorldNotes(), false);
-    }
-
-    public void renderLast(CameraRenderState camera, MultiBufferSource.BufferSource bufferSource) {
-        renderNotes(camera, bufferSource, StickyNotes.getCurrentWorldNotes(), true);
-    }
-
-    private static void renderNotes(CameraRenderState camera, MultiBufferSource.BufferSource bufferSource, List<Note> notes, boolean seeThrough) {
+    public void collectSubmits(LevelRenderContext context) {
+        List<Note> notes = StickyNotes.getCurrentWorldNotes();
         if (notes == null || notes.isEmpty()) return;
 
+        CameraRenderState camera = context.levelState().cameraRenderState;
+        SubmitNodeCollector collector = context.submitNodeCollector();
+        submitNotes(camera, collector, notes, false);
+        submitNotes(camera, collector, notes, true);
+    }
+
+    private static void submitNotes(CameraRenderState camera, SubmitNodeCollector collector, List<Note> notes, boolean seeThrough) {
         RenderType renderLayer = seeThrough ? RENDER_LAYER_SEE_THROUGH : RENDER_LAYER;
 
         PoseStack matrices = new PoseStack();
         TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.MAP_DECORATIONS);
         float viewDistanceSq = Mth.square(Minecraft.getInstance().options.getEffectiveRenderDistance() * 32.0F);
 
-        Camera cameraObj = Minecraft.getInstance().gameRenderer.getMainCamera();
         Quaternionf rotation = new Quaternionf().rotationYXZ(
-                Mth.DEG_TO_RAD * (180.0F - cameraObj.yRot()),
-                Mth.DEG_TO_RAD * (-cameraObj.xRot() * 0.4F),
+                Mth.DEG_TO_RAD * (180.0F - camera.yRot),
+                Mth.DEG_TO_RAD * (-camera.xRot * 0.4F),
                 0.0F
         );
 
@@ -133,11 +147,18 @@ public class NotesManager {
             float v1 = sprite.getV0();
             float u2 = sprite.getU1();
             float v2 = sprite.getV1();
-            VertexConsumer consumer = bufferSource.getBuffer(renderLayer);
-            consumer.addVertex(matrices.last(), -HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u1, v1).setColor(-1);
-            consumer.addVertex(matrices.last(), -HALF_SIZE_IN_WORLD, 0, 0).setUv(u1, v2).setColor(-1);
-            consumer.addVertex(matrices.last(), HALF_SIZE_IN_WORLD, 0, 0).setUv(u2, v2).setColor(-1);
-            consumer.addVertex(matrices.last(), HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u2, v1).setColor(-1);
+            SubmitNodeCollector.CustomGeometryRenderer geometry = (pose, consumer) -> {
+                consumer.addVertex(pose, -HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u1, v1).setColor(-1);
+                consumer.addVertex(pose, -HALF_SIZE_IN_WORLD, 0, 0).setUv(u1, v2).setColor(-1);
+                consumer.addVertex(pose, HALF_SIZE_IN_WORLD, 0, 0).setUv(u2, v2).setColor(-1);
+                consumer.addVertex(pose, HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u2, v1).setColor(-1);
+            };
+            if (seeThrough && collector instanceof SubmitNodeStorage storage) {
+                // Render after translucent terrain, so see-through notes are not covered by water, glass, etc.
+                storage.order(0).afterTerrain.submit(new CustomFeatureRenderer.Submit(matrices.last().copy(), renderLayer, geometry));
+            } else {
+                collector.submitCustomGeometry(matrices, renderLayer, geometry);
+            }
             matrices.popPose();
         }
     }

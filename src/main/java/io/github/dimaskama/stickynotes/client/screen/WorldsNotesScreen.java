@@ -36,6 +36,6 @@ public class WorldsNotesScreen extends Screen {
     @Override
     public void onClose() {
         if (saveOnExit) StickyNotes.CONFIG.saveIfDirty(true);
-        minecraft.setScreen(parent);
+        minecraft.gui.setScreen(parent);
     }
 }

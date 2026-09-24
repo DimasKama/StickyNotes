@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.Optionull;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -34,6 +35,7 @@ public class StickyNotes implements ClientModInitializer {
         CONFIG.loadOrCreate();
         ClientLifecycleEvents.CLIENT_STOPPING.register(CONFIG::onClientStopping);
         ClientTickEvents.END_CLIENT_TICK.register(NOTES_MANAGER::tick);
+        LevelRenderEvents.COLLECT_SUBMITS.register(NOTES_MANAGER::collectSubmits);
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "notes"), NOTES_MANAGER::renderHud);
         KeyMappingHelper.registerKeyMapping(OPEN_NOTES_LIST_KEY);
         IrisIntegration.init();

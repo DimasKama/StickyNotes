@@ -6,8 +6,7 @@
   "mixins": [
   ],
   "client": [
-    "SpriteAtlasTextureAccessor",
-    "LevelRendererMixin"
+    "SpriteAtlasTextureAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

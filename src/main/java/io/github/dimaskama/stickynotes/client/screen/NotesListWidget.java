@@ -50,7 +50,7 @@ public class NotesListWidget extends ContainerObjectSelectionList<NotesListWidge
         private Note note;
         private final Button editButton = Button.builder(Component.translatable("selectServer.edit"), button -> {
             if (note != null) {
-                Minecraft.getInstance().setScreen(new NoteEditScreen(screen, note, true));
+                Minecraft.getInstance().gui.setScreen(new NoteEditScreen(screen, note, true));
                 StickyNotes.CONFIG.markDirty();
             }
         }).size(40, 16).build();

@@ -69,7 +69,7 @@ public class WorldsNotesList extends ContainerObjectSelectionList<WorldsNotesLis
             Component editText = Component.translatable("stickynotes.world_notes_list.edit");
             int editWidth = textRenderer.width(editText) + 8;
             Button editButton = Button.builder(editText, button -> {
-                Minecraft.getInstance().setScreen(new NotesListScreen(screen, notes, false));
+                Minecraft.getInstance().gui.setScreen(new NotesListScreen(screen, notes, false));
             }).size(editWidth, 16).build();
             list.add(editButton);
             widthCount += editWidth + 2;

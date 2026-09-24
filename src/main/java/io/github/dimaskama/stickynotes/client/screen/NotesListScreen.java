@@ -44,7 +44,7 @@ public class NotesListScreen extends Screen {
                     false
             );
             notes.add(note);
-            minecraft.setScreen(new NoteEditScreen(this, note, false));
+            minecraft.gui.setScreen(new NoteEditScreen(this, note, false));
             StickyNotes.CONFIG.markDirty();
         }).bounds(x, y, 250, 20).build());
         y += 25;
@@ -52,7 +52,7 @@ public class NotesListScreen extends Screen {
             if (parent instanceof WorldsNotesScreen) {
                 onClose();
             } else {
-                minecraft.setScreen(new WorldsNotesScreen(this, false));
+                minecraft.gui.setScreen(new WorldsNotesScreen(this, false));
             }
         }).bounds(x, y, 120, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
@@ -75,6 +75,6 @@ public class NotesListScreen extends Screen {
         if (saveOnClose) {
             StickyNotes.CONFIG.saveIfDirty(true);
         }
-        minecraft.setScreen(parent);
+        minecraft.gui.setScreen(parent);
     }
 }
