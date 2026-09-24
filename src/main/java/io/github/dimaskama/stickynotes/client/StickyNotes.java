@@ -1,11 +1,13 @@
 package io.github.dimaskama.stickynotes.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import io.github.dimaskama.stickynotes.config.NotesConfig;
 import io.github.dimaskama.stickynotes.integration.IrisIntegration;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.FeatureRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.Optionull;
@@ -18,7 +20,6 @@ import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class StickyNotes implements ClientModInitializer {
     public static final NotesConfig CONFIG = new NotesConfig("config/stickynotes.json");
     public static final NotesManager NOTES_MANAGER = new NotesManager();
     public static final KeyMapping.Category KEY_CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath(MOD_ID, MOD_ID));
-    public static final KeyMapping OPEN_NOTES_LIST_KEY = new KeyMapping("stickynotes.open_list", GLFW.GLFW_KEY_N, KEY_CATEGORY);
+    public static final KeyMapping OPEN_NOTES_LIST_KEY = new KeyMapping("stickynotes.open_list", InputConstants.KEY_N, KEY_CATEGORY);
 
     @Override
     public void onInitializeClient() {
@@ -36,6 +37,7 @@ public class StickyNotes implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(CONFIG::onClientStopping);
         ClientTickEvents.END_CLIENT_TICK.register(NOTES_MANAGER::tick);
         LevelRenderEvents.COLLECT_SUBMITS.register(NOTES_MANAGER::collectSubmits);
+        FeatureRendererRegistry.register(NotesManager.SEE_THROUGH_FEATURE_TYPE, NotesManager.SeeThroughFeatureRenderer::new);
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "notes"), NOTES_MANAGER::renderHud);
         KeyMappingHelper.registerKeyMapping(OPEN_NOTES_LIST_KEY);
         IrisIntegration.init();

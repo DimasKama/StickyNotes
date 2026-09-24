@@ -1,23 +1,23 @@
 package io.github.dimaskama.stickynotes.client;
 
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import io.github.dimaskama.stickynotes.client.screen.NotesListScreen;
+import net.fabricmc.fabric.api.client.rendering.v1.SubmitRenderPhases;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.BindGroupLayouts;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.feature.CustomFeatureRenderer;
+import net.minecraft.client.renderer.feature.FeatureFrameContext;
+import net.minecraft.client.renderer.feature.FeatureRendererType;
+import net.minecraft.client.renderer.feature.RenderTypeFeatureRenderer;
+import net.minecraft.client.renderer.feature.submit.TranslucentSubmit;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -41,37 +41,31 @@ public class NotesManager {
     public static final double CLAMP_SQUARED_DIST = CLAMP_DIST * CLAMP_DIST;
     private static final float SIZE_IN_WORLD = 0.5F;
     private static final float HALF_SIZE_IN_WORLD = SIZE_IN_WORLD * 0.5F;
-    // Same as vanilla's private RenderPipelines.GUI_TEXTURED_SNIPPET
-    private static final RenderPipeline.Snippet TEXTURED_SNIPPET = RenderPipeline.builder()
-            .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-            .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
-            .withVertexShader("core/position_tex_color")
-            .withFragmentShader("core/position_tex_color")
-            .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
-            .withPrimitiveTopology(PrimitiveTopology.QUADS)
-            .buildSnippet();
-    public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(TEXTURED_SNIPPET)
+    // Rendered in the solid phase (no blending), because position_tex_color shader doesn't support
+    // Improved Transparency (OIT). Map decoration sprites have binary alpha, and fully transparent pixels are discarded.
+    public static final RenderPipeline RENDER_PIPELINE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes"))
+            .withColorTargetState(ColorTargetState.DEFAULT)
             .withDepthStencilState(DepthStencilState.DEFAULT)
             .build();
     private static final RenderType RENDER_LAYER = RenderType.create(
             "stickynotes",
             RenderSetup.builder(RENDER_PIPELINE)
-                    .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/map_decorations.png"))
+                    .withTexture("Sampler0", Sheets.MAP_DECORATIONS_SHEET)
                     .createRenderSetup()
     );
-    public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(TEXTURED_SNIPPET)
+    // Rendered in the see-through phase (after all terrain and translucent geometry, without depth attachment)
+    public static final RenderPipeline RENDER_PIPELINE_SEE_THROUGH = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(StickyNotes.MOD_ID, "stickynotes_see_through"))
-            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
+            .withDepthStencilState(Optional.empty())
             .build();
     private static final RenderType RENDER_LAYER_SEE_THROUGH = RenderType.create(
             "stickynotes_see_through",
             RenderSetup.builder(RENDER_PIPELINE_SEE_THROUGH)
-                    .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/map_decorations.png"))
+                    .withTexture("Sampler0", Sheets.MAP_DECORATIONS_SHEET)
                     .createRenderSetup()
     );
+    public static final FeatureRendererType<SeeThroughSubmit> SEE_THROUGH_FEATURE_TYPE = FeatureRendererType.create("stickynotes:see_through");
     @Nullable
     private Note targetedNote;
     private int noteTargetTime;
@@ -141,7 +135,7 @@ public class NotesManager {
             Vec3 relPos = seeThrough ? note.getClampedRelativePos(camera.pos) : note.pos.subtract(camera.pos);
             matrices.pushPose();
             matrices.translate(relPos.x, relPos.y, relPos.z);
-            matrices.mulPose(rotation);
+            matrices.rotate(rotation);
             TextureAtlasSprite sprite = atlas.getSprite(note.icon);
             float u1 = sprite.getU0();
             float v1 = sprite.getV0();
@@ -153,9 +147,9 @@ public class NotesManager {
                 consumer.addVertex(pose, HALF_SIZE_IN_WORLD, 0, 0).setUv(u2, v2).setColor(-1);
                 consumer.addVertex(pose, HALF_SIZE_IN_WORLD, SIZE_IN_WORLD, 0).setUv(u2, v1).setColor(-1);
             };
-            if (seeThrough && collector instanceof SubmitNodeStorage storage) {
+            if (seeThrough) {
                 // Render after translucent terrain, so see-through notes are not covered by water, glass, etc.
-                storage.order(0).afterTerrain.submit(new CustomFeatureRenderer.Submit(matrices.last().copy(), renderLayer, geometry));
+                collector.submitCustom(SubmitRenderPhases.SEE_THROUGH_NAME_TAGS, new SeeThroughSubmit(matrices.last().copy(), renderLayer, geometry));
             } else {
                 collector.submitCustomGeometry(matrices, renderLayer, geometry);
             }
@@ -194,6 +188,27 @@ public class NotesManager {
                 (descAlphaMask << 24) | 0x00FFFFFF,
                 false
         );
+    }
+
+    public record SeeThroughSubmit(PoseStack.Pose pose, RenderType renderType, SubmitNodeCollector.CustomGeometryRenderer customGeometryRenderer) implements TranslucentSubmit {
+        @Override
+        public float distanceToCameraSq() {
+            return TranslucentSubmit.computeDistanceToCameraSq(pose.pose());
+        }
+
+        @Override
+        public FeatureRendererType<SeeThroughSubmit> featureType() {
+            return SEE_THROUGH_FEATURE_TYPE;
+        }
+    }
+
+    public static class SeeThroughFeatureRenderer extends RenderTypeFeatureRenderer<SeeThroughSubmit> {
+        @Override
+        protected void buildGroup(FeatureFrameContext context, List<SeeThroughSubmit> submits) {
+            for (SeeThroughSubmit submit : submits) {
+                submit.customGeometryRenderer().render(submit.pose(), getVertexBuilder(submit.renderType()));
+            }
+        }
     }
 
 }
